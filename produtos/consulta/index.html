@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
+<title>Gestok | Produtos</title>
+<link
+    rel="stylesheet"
+    href="style.css"
+>
+</head>
+
+<body>
+    <div class="overlay" id="overlay"></div>
+    <aside class="sidebar" id="sidebar">
+
+    <div class="sidebar-top">
+
+        <a href="../index.html" class="brand">
+
+            <div class="brand-icon">
+                G
+            </div>
+
+            <div>
+                <strong>Gestok</strong>
+                <span>Gestão de estoque</span>
+            </div>
+
+        </a>
+
+        <button
+            class="close-sidebar"
+            id="closeSidebar"
+            aria-label="Fechar menu">
+
+            ×
+
+        </button>
+
+    </div>
+
+
+    <nav class="navigation">
+
+        <span class="nav-title">
+            PRINCIPAL
+        </span>
+
+
+        <!-- DASHBOARD -->
+
+        <a
+            href="../../index.html"
+            class="nav-item">
+
+            <span class="nav-icon">⌂</span>
+
+            <span>Dashboard</span>
+
+        </a>
+
+
+        <!-- PRODUTOS -->
+
+        <a
+            href="index.html"
+            class="nav-item active">
+
+            <span class="nav-icon">▣</span>
+
+            <span>Produtos</span>
+
+        </a>
+
+
+        <!-- CRIAR PRODUTO -->
+
+        <a
+            href="../index.html#novo"
+            class="nav-item nav-create-product">
+
+            <span class="nav-icon">＋</span>
+
+            <div>
+
+                <strong>Criar produto</strong>
+
+                <small>Novo item no estoque</small>
+
+            </div>
+
+        </a>
+
+
+        <span class="nav-title">
+            ESTOQUE
+        </span>
+
+
+        <!-- ENTRADA -->
+
+        <a
+            href="../../entrada/index.html"
+            class="nav-item">
+            <span class="nav-icon">↓</span>
+
+            <span>Entrada</span>
+
+        </a>
+
+
+        <!-- SAÍDA -->
+
+        <a
+            href="../../saida/index.html"
+            class="nav-item">
+
+            <span class="nav-icon">↑</span>
+
+            <span>Saída</span>
+
+        </a>
+
+
+        <!-- MOVIMENTAÇÕES -->
+
+        <a
+            href="#"
+            class="nav-item">
+
+            <span class="nav-icon">↔</span>
+
+            <span>Movimentações</span>
+
+        </a>
+
+
+        <span class="nav-title">
+            GESTÃO
+        </span>
+
+
+        <!-- SOLICITAÇÕES -->
+
+        <a
+            href="#"
+            class="nav-item">
+
+            <span class="nav-icon">□</span>
+
+            <span>Solicitações</span>
+
+        </a>
+
+
+        <!-- OPERADORES -->
+
+        <a
+            href="#"
+            class="nav-item">
+
+            <span class="nav-icon">♙</span>
+
+            <span>Operadores</span>
+
+        </a>
+
+        <a href="../../perfil/index.html" class="nav-item">
+            <span class="nav-icon">◉</span>
+            <span>Perfil</span>
+        </a>
+
+    </nav>
+
+
+    <div class="sidebar-bottom">
+
+        <div class="system-status">
+
+            <span class="status-dot"></span>
+
+            <div>
+
+                <strong>
+                    Sistema online
+                </strong>
+
+                <small>
+                    Todos os serviços funcionando
+                </small>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</aside>
+<header class="header">
+
+    <div class="header-left">
+
+        <button
+            class="menu-button"
+            id="menuButton"
+            aria-label="Abrir menu">
+
+            <span></span>
+            <span></span>
+            <span></span>
+
+        </button>
+
+        <div class="page-name">
+            Entrada de estoque
+        </div>
+
+    </div>
+</header>
+<!-- =========================================
+     CONTEÚDO
+========================================== -->
+
+<main class="page">
+
+    <!-- CABEÇALHO -->
+
+    <div class="page-header">
+
+        <div>
+
+            <span class="eyebrow">
+                ESTOQUE
+            </span>
+
+            <h1>
+                Produtos
+            </h1>
+
+            <p>
+                Consulte e acompanhe os produtos cadastrados no estoque.
+            </p>
+
+        </div>
+
+
+        <a
+            href="../index.html#novo"
+            class="primary-button"
+        >
+            ＋ Novo produto
+        </a>
+
+    </div>
+
+
+    <!-- =====================================
+         PAINEL DE CONSULTA
+    ====================================== -->
+
+    <section class="products-panel">
+
+
+        <!-- CABEÇALHO DO PAINEL -->
+
+        <div class="products-panel-header">
+
+            <div>
+
+                <h2>
+                    Produtos cadastrados
+                </h2>
+
+                <p>
+                    Pesquise e filtre os produtos do estoque.
+                </p>
+
+            </div>
+
+
+            <div
+                class="products-total"
+                id="produtosCount"
+            >
+                0 produtos
+            </div>
+
+        </div>
+
+
+        <!-- =====================================
+             PESQUISA
+        ====================================== -->
+
+        <div class="search-box">
+
+            <span class="search-icon">
+                🔎
+            </span>
+
+            <input
+                type="text"
+                id="pesquisaProduto"
+                placeholder="Pesquisar por nome ou código..."
+                autocomplete="off"
+            >
+
+        </div>
+
+
+        <!-- =====================================
+             FILTROS
+        ====================================== -->
+
+        <div class="filters">
+
+            <div class="filter-group">
+
+                <label for="filtroCategoria">
+                    Categoria
+                </label>
+
+                <select id="filtroCategoria">
+
+                    <option value="">
+                        Todas
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="filter-group">
+
+                <label for="filtroStatus">
+                    Status
+                </label>
+
+                <select id="filtroStatus">
+
+                    <option value="">
+                        Todos
+                    </option>
+
+                    <option value="ativo">
+                        Ativos
+                    </option>
+
+                    <option value="inativo">
+                        Inativos
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="filter-group">
+
+                <label for="filtroEstoque">
+                    Estoque
+                </label>
+
+                <select id="filtroEstoque">
+
+                    <option value="">
+                        Todos
+                    </option>
+
+                    <option value="normal">
+                        Normal
+                    </option>
+
+                    <option value="baixo">
+                        Abaixo do mínimo
+                    </option>
+
+                    <option value="zerado">
+                        Zerado
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="filter-group">
+
+                <label for="ordenacao">
+                    Ordenar
+                </label>
+
+                <select id="ordenacao">
+
+                    <option value="nome">
+                        Nome A-Z
+                    </option>
+
+                    <option value="nome-desc">
+                        Nome Z-A
+                    </option>
+
+                    <option value="estoque-menor">
+                        Menor estoque
+                    </option>
+
+                    <option value="estoque-maior">
+                        Maior estoque
+                    </option>
+
+                    <option value="codigo">
+                        Código A-Z
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <button
+                type="button"
+                class="clear-filters"
+                id="limparFiltros"
+            >
+                Limpar filtros
+            </button>
+
+        </div>
+
+
+        <!-- =====================================
+             TABELA
+        ====================================== -->
+
+        <div class="table-container">
+
+            <table class="products-table">
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            Produto
+                        </th>
+
+                        <th>
+                            Código
+                        </th>
+
+                        <th>
+                            Categoria
+                        </th>
+
+                        <th>
+                            Estoque
+                        </th>
+
+                        <th>
+                            Mínimo
+                        </th>
+
+                        <th>
+                            Máximo
+                        </th>
+
+                        <th>
+                            Status
+                        </th>
+
+                        <th>
+                            Ação
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody id="produtosTabela">
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+
+        <!-- =====================================
+             SEM RESULTADOS
+        ====================================== -->
+
+        <div
+            class="no-results"
+            id="semResultados"
+        >
+
+            <div class="no-results-icon">
+                📦
+            </div>
+
+            <strong>
+                Nenhum produto encontrado
+            </strong>
+
+            <span>
+                Tente alterar a pesquisa ou os filtros.
+            </span>
+
+        </div>
+
+
+    </section>
+
+</main>
+
+
+<script src="script.js"></script>
+
+</body>
+
+</html>

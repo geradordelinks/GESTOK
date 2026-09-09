@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
+<title>Gestok | Saída de estoque</title>
+
+<link
+    rel="stylesheet"
+    href="style.css"
+>
+</head>
+<body>
+    <div class="overlay" id="overlay"></div>
+    <aside class="sidebar" id="sidebar">
+
+    <div class="sidebar-top">
+
+        <a href="../index.html" class="brand">
+
+            <div class="brand-icon">
+                G
+            </div>
+
+            <div>
+                <strong>Gestok</strong>
+                <span>Gestão de estoque</span>
+            </div>
+
+        </a>
+
+        <button
+            class="close-sidebar"
+            id="closeSidebar"
+            aria-label="Fechar menu">
+
+            ×
+
+        </button>
+
+    </div>
+
+
+    <nav class="navigation">
+
+        <span class="nav-title">
+            PRINCIPAL
+        </span>
+
+
+        <!-- DASHBOARD -->
+
+        <a
+            href="../index.html"
+            class="nav-item">
+
+            <span class="nav-icon">⌂</span>
+
+            <span>Dashboard</span>
+
+        </a>
+
+
+        <!-- PRODUTOS -->
+
+        <a
+            href="../produtos/consulta/index.html"
+            class="nav-item">
+
+            <span class="nav-icon">▣</span>
+
+            <span>Produtos</span>
+
+        </a>
+
+
+        <!-- CRIAR PRODUTO -->
+
+        <a
+            href="../produtos/index.html#novo"
+            class="nav-item nav-create-product">
+
+            <span class="nav-icon">＋</span>
+
+            <div>
+
+                <strong>Criar produto</strong>
+
+                <small>Novo item no estoque</small>
+
+            </div>
+
+        </a>
+
+
+        <span class="nav-title">
+            ESTOQUE
+        </span>
+
+
+        <!-- ENTRADA -->
+
+        <a
+            href="../entrada/index.html"
+            class="nav-item">
+            <span class="nav-icon">↓</span>
+
+            <span>Entrada</span>
+
+        </a>
+
+
+        <!-- SAÍDA -->
+
+        <a
+            href="../saida/index.html"
+            class="nav-item active">
+
+            <span class="nav-icon">↑</span>
+
+            <span>Saída</span>
+
+        </a>
+
+
+        <!-- MOVIMENTAÇÕES -->
+
+        <a
+            href="#"
+            class="nav-item">
+
+            <span class="nav-icon">↔</span>
+
+            <span>Movimentações</span>
+
+        </a>
+
+
+        <span class="nav-title">
+            GESTÃO
+        </span>
+
+
+        <!-- SOLICITAÇÕES -->
+
+        <a
+            href="#"
+            class="nav-item">
+
+            <span class="nav-icon">□</span>
+
+            <span>Solicitações</span>
+
+        </a>
+
+
+        <!-- OPERADORES -->
+
+        <a
+            href="#"
+            class="nav-item">
+
+            <span class="nav-icon">♙</span>
+
+            <span>Operadores</span>
+
+        </a>
+
+        <a href="../perfil/index.html" class="nav-item">
+            <span class="nav-icon">◉</span>
+            <span>Perfil</span>
+        </a>
+
+    </nav>
+
+
+    <div class="sidebar-bottom">
+
+        <div class="system-status">
+
+            <span class="status-dot"></span>
+
+            <div>
+
+                <strong>
+                    Sistema online
+                </strong>
+
+                <small>
+                    Todos os serviços funcionando
+                </small>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</aside>
+<header class="header">
+
+    <div class="header-left">
+
+        <button
+            class="menu-button"
+            id="menuButton"
+            aria-label="Abrir menu">
+
+            <span></span>
+            <span></span>
+            <span></span>
+
+        </button>
+
+        <div class="page-name">
+            Entrada de estoque
+        </div>
+
+    </div>
+
+    </div>
+
+</header>
+<!-- =========================================
+     CONTEÚDO
+========================================== -->
+
+<main class="page">
+
+
+    <!-- CABEÇALHO -->
+
+    <div class="page-header">
+
+        <div>
+
+            <span class="eyebrow">
+                ESTOQUE
+            </span>
+
+            <h1>
+                Saída de estoque
+            </h1>
+
+            <p>
+                Registre a saída de produtos do estoque.
+            </p>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- =====================================
+         FORMULÁRIO
+    ====================================== -->
+
+    <section class="product-container">
+
+
+        <div class="form-header">
+
+            <div>
+
+                <h2>
+                    Registrar saída
+                </h2>
+
+                <p>
+                    Selecione o produto e informe a quantidade que será retirada do estoque.
+                </p>
+
+            </div>
+
+        </div>
+
+
+
+        <form id="saidaForm">
+
+
+            <div class="form-grid">
+
+
+                <!-- PRODUTO -->
+
+                <div class="form-group full">
+
+                    <label for="produto">
+                        Produto *
+                    </label>
+
+                    <select
+                        id="produto"
+                        name="produto"
+                        required
+                    >
+
+                        <option value="">
+                            Selecione um produto
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+
+                <!-- ESTOQUE ATUAL -->
+
+                <div class="form-group">
+
+                    <label>
+                        Estoque atual
+                    </label>
+
+                    <div
+                        class="stock-display"
+                        id="estoqueAtual"
+                    >
+                        -
+                    </div>
+
+                </div>
+
+
+
+                <!-- UNIDADE -->
+
+                <div class="form-group">
+
+                    <label>
+                        Unidade
+                    </label>
+
+                    <div
+                        class="stock-display"
+                        id="unidadeProduto"
+                    >
+                        -
+                    </div>
+
+                </div>
+
+
+
+                <!-- QUANTIDADE DE SAÍDA -->
+
+                <div class="form-group">
+
+                    <label for="quantidade">
+                        Quantidade de saída *
+                    </label>
+
+                    <input
+                        type="number"
+                        id="quantidade"
+                        name="quantidade"
+                        min="0.01"
+                        step="0.01"
+                        placeholder="Ex.: 10"
+                        required
+                    >
+
+                </div>
+
+
+
+                <!-- NOVO ESTOQUE -->
+
+                <div class="form-group">
+
+                    <label>
+                        Novo estoque
+                    </label>
+
+                    <div
+                        class="stock-display highlight"
+                        id="novoEstoque"
+                    >
+                        -
+                    </div>
+
+                </div>
+
+
+
+                <!-- MOTIVO -->
+
+                <div class="form-group full">
+
+                    <label for="motivo">
+                        Motivo da saída
+                    </label>
+
+                    <select
+                        id="motivo"
+                        name="motivo"
+                    >
+
+                        <option value="">
+                            Selecione um motivo
+                        </option>
+
+                        <option value="Venda">
+                            Venda
+                        </option>
+
+                        <option value="Perda">
+                            Perda
+                        </option>
+
+                        <option value="Uso interno">
+                            Uso interno
+                        </option>
+
+                        <option value="Devolução">
+                            Devolução
+                        </option>
+
+                        <option value="Ajuste de estoque">
+                            Ajuste de estoque
+                        </option>
+
+                        <option value="Outros">
+                            Outros
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+
+                <!-- OBSERVAÇÃO -->
+
+                <div class="form-group full">
+
+                    <label for="observacao">
+                        Observação
+                    </label>
+
+                    <textarea
+                        id="observacao"
+                        name="observacao"
+                        rows="4"
+                        placeholder="Digite uma observação sobre esta saída..."
+                    ></textarea>
+
+                </div>
+
+
+            </div>
+            <!-- =================================
+                 RODAPÉ
+            ================================== -->
+
+            <div class="form-footer">
+
+                <a
+                    href="../index.html"
+                    class="secondary-button"
+                >
+                    Cancelar
+                </a>
+
+
+                <button
+                    type="submit"
+                    class="primary-button"
+                >
+                    ↓ Registrar saída
+                </button>
+
+            </div>
+
+
+        </form>
+
+    </section>
+</main>
+<script src="script.js"></script>
+</body>
+</html>
