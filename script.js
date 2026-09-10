@@ -28,7 +28,23 @@ document.querySelectorAll(".nav-item");
 /* =========================================
 MENU
 ========================================= */
+function atualizarNumeroMovimentacoes() {
+    const elemento = document.getElementById("totalMovimentacoes");
 
+    if (!elemento) return;
+
+    let movimentacoes = [];
+
+    try {
+        movimentacoes = JSON.parse(
+            localStorage.getItem("gestok_movimentacoes")
+        ) || [];
+    } catch (erro) {
+        movimentacoes = [];
+    }
+
+    elemento.textContent = movimentacoes.length;
+}
 function abrirMenu() {
 
 if (sidebar) {
@@ -201,13 +217,8 @@ button.addEventListener(
             pagina === "Movimentações" ||
             pagina === "Movimentacoes"
         ) {
-
-            console.log(
-                "Página de movimentações ainda não criada."
-            );
-
+            window.location.href = "movimentacoes/index.html";
             return;
-
         }
 
 
@@ -232,6 +243,90 @@ button.addEventListener(
 );
 
 });
+
+
+/* =========================================
+   MOVIMENTAÇÕES DO DASHBOARD
+========================================= */
+
+const CHAVE_MOVIMENTACOES = "gestok_movimentacoes";
+
+function obterMovimentacoesDashboard() {
+    try {
+        const dados = JSON.parse(localStorage.getItem(CHAVE_MOVIMENTACOES) || "[]");
+        return Array.isArray(dados) ? dados : [];
+    } catch (erro) {
+        console.error("Erro ao carregar movimentações:", erro);
+        return [];
+    }
+}
+
+function formatarDataMovimentacao(data) {
+    const d = new Date(data);
+    if (Number.isNaN(d.getTime())) return "";
+    return new Intl.DateTimeFormat("pt-BR", {
+        day: "2-digit", month: "2-digit", year: "numeric",
+        hour: "2-digit", minute: "2-digit"
+    }).format(d);
+}
+
+function atualizarMovimentacoesDashboard() {
+    const painel = document.querySelector(".movements-panel");
+    if (!painel) return;
+
+    const vazio = painel.querySelector(".empty-state");
+    let movimentos = obterMovimentacoesDashboard()
+        .filter(item => item && item.data)
+        .sort((a, b) => new Date(b.data) - new Date(a.data));
+
+    const recentes = movimentos.slice(0, 5);
+    let lista = painel.querySelector(".dashboard-movements-list");
+
+    if (!recentes.length) {
+        if (lista) lista.remove();
+        if (vazio) {
+            vazio.style.display = "flex";
+            vazio.innerHTML = `
+                <div class="empty-icon">↔</div>
+                <strong>Nenhuma movimentação</strong>
+                <span>As entradas e saídas aparecerão aqui.</span>
+            `;
+        }
+        return;
+    }
+
+    if (vazio) vazio.style.display = "none";
+    if (!lista) {
+        lista = document.createElement("div");
+        lista.className = "dashboard-movements-list";
+        painel.appendChild(lista);
+    }
+
+    lista.innerHTML = recentes.map(item => {
+        const entrada = String(item.tipo || "").toLowerCase().includes("entrada");
+        const sinal = entrada ? "+" : "−";
+        const classe = entrada ? "movement-entry" : "movement-exit";
+        const icone = entrada ? "↓" : "↑";
+        const quantidade = Number(item.quantidade || 0);
+        const anterior = item.estoqueAnterior ?? item.estoqueAntes ?? 0;
+        const novo = item.estoqueNovo ?? item.estoqueDepois ?? 0;
+
+        return `
+            <div class="dashboard-movement ${classe}">
+                <div class="movement-main">
+                    <div class="movement-icon">${icone}</div>
+                    <div class="movement-info">
+                        <strong>${item.produto || "Produto"}</strong>
+                        <span>${item.tipo || (entrada ? "Entrada" : "Saída")} • ${formatarDataMovimentacao(item.data)}</span>
+                    </div>
+                </div>
+                <div class="movement-values">
+                    <strong>${sinal}${quantidade} ${item.unidade || "UN"}</strong>
+                    <span>${anterior} → ${novo}</span>
+                </div>
+            </div>`;
+    }).join("");
+}
 
 /* =========================================
 NOTIFICAÇÕES
@@ -736,6 +831,8 @@ function (event) {
 
         atualizarDashboard();
 
+        atualizarMovimentacoesDashboard();
+
     }
 
 }
@@ -775,6 +872,25 @@ function () {
 
     atualizarDashboard();
 
+    atualizarMovimentacoesDashboard();
+    
+    atualizarNumeroMovimentacoes();
+
 }
 
 );
+
+window.addEventListener("pageshow", function () {
+    atualizarData();
+    atualizarDashboard();
+    atualizarMovimentacoesDashboard();
+});
+
+const verTodasMovimentacoes =
+    document.getElementById("verTodasMovimentacoes");
+
+if (verTodasMovimentacoes) {
+    verTodasMovimentacoes.addEventListener("click", function () {
+        window.location.href = "movimentacoes/index.html";
+    });
+}

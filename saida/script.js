@@ -608,6 +608,33 @@ function (event) {
 
 
     /* =================================
+       REGISTRAR NO HISTÓRICO
+    ================================= */
+
+    const movimentacoesSalvas =
+        JSON.parse(localStorage.getItem(CHAVE_MOVIMENTACOES) || "[]");
+
+    movimentacoesSalvas.unshift({
+        id: Date.now(),
+        tipo: "Saída",
+        produtoId: produtoAtual.id,
+        produto: produtoAtual.nome,
+        codigo: produtoAtual.codigo || "",
+        quantidade: quantidade,
+        unidade: produtoAtual.unidade || "UN",
+        estoqueAnterior: estoqueAnterior,
+        estoqueNovo: estoqueNovo,
+        motivo: motivo ? motivo.value : "",
+        observacao: observacao ? observacao.value.trim() : "",
+        data: new Date().toISOString()
+    });
+
+    localStorage.setItem(
+        CHAVE_MOVIMENTACOES,
+        JSON.stringify(movimentacoesSalvas)
+    );
+
+    /* =================================
        SALVAR
     ================================= */
 

@@ -115,8 +115,6 @@ const quantidadeEntrada =
 
 const novoEstoque =
     document.getElementById("novoEstoque");
-
-
 /* =========================================
    CONFIGURAÇÃO
 ========================================= */
@@ -508,6 +506,33 @@ form.addEventListener(
         produtoAtual.dataAtualizacao =
             new Date().toISOString();
 
+
+        /* =================================
+           REGISTRAR NO HISTÓRICO
+        ================================= */
+
+        const movimentacoesSalvas =
+            JSON.parse(localStorage.getItem(CHAVE_MOVIMENTACOES) || "[]");
+
+        movimentacoesSalvas.unshift({
+            id: Date.now(),
+            tipo: "Entrada",
+            produtoId: produtoAtual.id,
+            produto: produtoAtual.nome,
+            codigo: produtoAtual.codigo || "",
+            quantidade: quantidade,
+            unidade: produtoAtual.unidade || "UN",
+            estoqueAnterior: estoqueAnterior,
+            estoqueNovo: estoqueNovo,
+            motivo: motivo || "",
+            observacao: observacao || "",
+            data: new Date().toISOString()
+        });
+
+        localStorage.setItem(
+            CHAVE_MOVIMENTACOES,
+            JSON.stringify(movimentacoesSalvas)
+        );
 
         /* =================================
            SALVAR

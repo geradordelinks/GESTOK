@@ -1318,3 +1318,108 @@ a {
 #alertProductsList::-webkit-scrollbar-track {
     background: transparent;
 }
+
+/* =========================================
+   MOVIMENTAÇÕES DO DASHBOARD
+========================================= */
+
+.dashboard-movements-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 4px;
+    max-height: 310px;
+    overflow-y: auto;
+    padding-right: 3px;
+}
+
+.dashboard-movement {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 12px 14px;
+    border: 1px solid #edf0f4;
+    border-radius: 10px;
+    background: #fff;
+}
+
+.movement-main {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.movement-icon {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9px;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.movement-entry .movement-icon {
+    background: #edf9f1;
+    color: #20a45a;
+}
+
+.movement-exit .movement-icon {
+    background: #fff0f0;
+    color: #df4b4b;
+}
+
+.movement-info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.movement-info strong {
+    font-size: 11px;
+    color: #202938;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.movement-info span,
+.movement-values span {
+    font-size: 9px;
+    color: #9aa2ad;
+}
+
+.movement-values {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 3px;
+    flex-shrink: 0;
+}
+
+.movement-values strong {
+    font-size: 11px;
+}
+
+.movement-entry .movement-values strong {
+    color: #20a45a;
+}
+
+.movement-exit .movement-values strong {
+    color: #df4b4b;
+}
+
+@media (max-width: 600px) {
+    .dashboard-movement {
+        padding: 10px;
+    }
+
+    .movement-values span {
+        display: none;
+    }
+}
