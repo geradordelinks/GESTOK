@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Gestok | Login</title>
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+</head>
+
+<body>
+
+    <main>
+
+        <!-- Card de login -->
+        <section class="card">
+
+            <!-- Logo -->
+            <div class="logo">
+                G
+            </div>
+
+
+            <!-- Título -->
+            <span class="eyebrow">
+                ACESSAR O SISTEMA
+            </span>
+
+            <h1>
+                Bem-vindo ao Gestok
+            </h1>
+
+            <p>
+                Entre com sua conta para acessar seu estoque.
+            </p>
+
+
+            <!-- Formulário -->
+            <form>
+
+                <!-- E-mail -->
+                <label>
+                    E-mail
+
+                    <input
+                        id="email"
+                        type="email"
+                        placeholder="seu@email.com"
+                        autocomplete="email"
+                        required
+                    >
+                </label>
+
+
+                <!-- Senha -->
+                <label>
+                    Senha
+
+                    <input
+                        id="senha"
+                        type="password"
+                        placeholder="Sua senha"
+                        autocomplete="current-password"
+                        required
+                    >
+                </label>
+
+
+                <!-- Mensagem do formulário -->
+                <div
+                    id="mensagemLogin"
+                    class="form-message"
+                    hidden
+                ></div>
+
+
+                <!-- Botão -->
+                <button type="submit">
+                    Entrar no Gestok →
+                </button>
+
+            </form>
+
+
+            <!-- Links -->
+            <div class="links">
+
+                <a href="../cadastro/index.html">
+                    Criar uma conta
+                </a>
+
+                <a href="../apresentacao/apresentacao.html">
+                    Voltar à apresentação
+                </a>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- Autenticação -->
+    <script src="../auth.js"></script>
+
+    <!-- Script do login -->
+    <script src="script.js"></script>
+
+</body>
+
+</html>

@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Gestok | Pagamento</title>
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+
+</head>
+
+<body>
+
+    <main class="payment-page">
+
+        <section class="payment-card">
+
+            <div class="logo">
+                G
+            </div>
+
+
+            <span class="eyebrow">
+                ASSINATURA
+            </span>
+
+
+            <h1>
+                Ative seu Gestok
+            </h1>
+
+
+            <p class="description">
+                Sua conta foi criada com sucesso.
+                Agora finalize o pagamento para liberar
+                o acesso ao sistema.
+            </p>
+
+
+            <!-- PLANO -->
+
+            <div class="plan-box">
+
+                <div>
+
+                    <span>
+                        PLANO GESTOK
+                    </span>
+
+                    <strong>
+                        Gestok
+                    </strong>
+
+                    <small>
+                        Acesso por 30 dias
+                    </small>
+
+                </div>
+
+
+                <div class="price">
+
+                    <small>
+                        R$
+                    </small>
+
+                    <strong>
+                        30,00
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <!-- BENEFÍCIOS -->
+
+            <div class="benefits">
+
+                <div>
+                    ✓ Cadastro de produtos
+                </div>
+
+                <div>
+                    ✓ Entradas e saídas
+                </div>
+
+                <div>
+                    ✓ Histórico de movimentações
+                </div>
+
+                <div>
+                    ✓ Alertas de estoque
+                </div>
+
+                <div>
+                    ✓ Dashboard completo
+                </div>
+
+            </div>
+
+
+            <!-- PAGAMENTO -->
+
+            <div class="payment-method">
+
+                <span class="method-label">
+                    FORMA DE PAGAMENTO
+                </span>
+
+
+                <button
+                    type="button"
+                    class="method active"
+                    id="btnPix"
+                >
+
+                    <span class="method-icon">
+                        ◉
+                    </span>
+
+                    <span>
+
+                        <strong>
+                            PIX
+                        </strong>
+
+                        <small>
+                            Pagamento instantâneo
+                        </small>
+
+                    </span>
+
+                </button>
+
+
+                <div
+                    class="pix-area"
+                    id="pixArea"
+                >
+
+                    <div class="pix-code">
+                        PIX
+                    </div>
+
+                    <strong>
+                        Pagamento via PIX
+                    </strong>
+
+                    <span>
+                        Valor: R$ 30,00
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <!-- MENSAGEM -->
+
+            <div
+                id="mensagemPagamento"
+                class="payment-message"
+                hidden
+            ></div>
+
+
+            <!-- BOTÃO -->
+
+            <button
+                type="button"
+                id="btnPagamento"
+                class="payment-button"
+            >
+
+                Confirmar pagamento
+
+                <span>
+                    →
+                </span>
+
+            </button>
+
+
+            <small class="security-note">
+                🔒 Seu acesso será liberado somente após
+                a confirmação do pagamento.
+            </small>
+
+
+            <a
+                href="../login/index.html"
+                class="back-link"
+            >
+                ← Voltar para o login
+            </a>
+
+        </section>
+
+    </main>
+
+
+    <script src="../auth.js"></script>
+
+    <script src="script.js"></script>
+
+</body>
+
+</html>
