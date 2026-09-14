@@ -2,6 +2,7 @@
 <html lang="pt-BR">
 
 <head>
+
     <meta charset="UTF-8">
 
     <meta
@@ -15,54 +16,92 @@
         rel="stylesheet"
         href="style.css"
     >
+
 </head>
 
 <body>
 
     <main>
 
-        <!-- Card de login -->
+        <!-- CARD DE LOGIN -->
+
         <section class="card">
 
-            <!-- Logo -->
+
+            <!-- LOGO -->
+
             <div class="logo">
                 G
             </div>
 
 
-            <!-- Título -->
+            <!-- TÍTULO -->
+
             <span class="eyebrow">
                 ACESSAR O SISTEMA
             </span>
+
 
             <h1>
                 Bem-vindo ao Gestok
             </h1>
 
+
             <p>
-                Entre com sua conta para acessar seu estoque.
+                Entre com o Código da Loja,
+                usuário e senha.
             </p>
 
 
-            <!-- Formulário -->
+            <!-- FORMULÁRIO -->
+
             <form>
 
-                <!-- E-mail -->
+
+                <!-- CÓDIGO DA LOJA -->
+
                 <label>
-                    E-mail
+
+                    Código da Loja
 
                     <input
-                        id="email"
-                        type="email"
-                        placeholder="seu@email.com"
-                        autocomplete="email"
+                        id="codigoLoja"
+                        type="text"
+                        inputmode="numeric"
+                        maxlength="4"
+                        placeholder="Ex.: 0001"
+                        autocomplete="off"
                         required
                     >
+
+                    <small class="field-help">
+                        Código de 4 dígitos da sua empresa.
+                    </small>
+
                 </label>
 
 
-                <!-- Senha -->
+                <!-- USUÁRIO -->
+
                 <label>
+
+                    Usuário
+
+                    <input
+                        id="usuario"
+                        type="text"
+                        placeholder="Seu usuário"
+                        autocomplete="username"
+                        required
+                    >
+
+                </label>
+
+
+                <!-- SENHA -->
+
+                <label>
+
                     Senha
 
                     <input
@@ -72,10 +111,12 @@
                         autocomplete="current-password"
                         required
                     >
+
                 </label>
 
 
-                <!-- Mensagem do formulário -->
+                <!-- MENSAGEM -->
+
                 <div
                     id="mensagemLogin"
                     class="form-message"
@@ -83,36 +124,45 @@
                 ></div>
 
 
-                <!-- Botão -->
+                <!-- BOTÃO -->
+
                 <button type="submit">
+
                     Entrar no Gestok →
+
                 </button>
+
 
             </form>
 
 
-            <!-- Links -->
+            <!-- LINKS -->
+
             <div class="links">
 
                 <a href="../cadastro/index.html">
                     Criar uma conta
                 </a>
 
-                <a href="../apresentacao/apresentacao.html">
+                <a href="../apresentacao.html">
                     Voltar à apresentação
                 </a>
 
             </div>
+
 
         </section>
 
     </main>
 
 
-    <!-- Autenticação -->
+    <!-- AUTENTICAÇÃO -->
+
     <script src="../auth.js"></script>
 
-    <!-- Script do login -->
+
+    <!-- SCRIPT -->
+
     <script src="script.js"></script>
 
 </body>

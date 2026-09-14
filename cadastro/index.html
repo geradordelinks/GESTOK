@@ -2,6 +2,7 @@
 <html lang="pt-BR">
 
 <head>
+
     <meta charset="UTF-8">
 
     <meta
@@ -15,13 +16,15 @@
         rel="stylesheet"
         href="style.css"
     >
+
 </head>
 
 <body>
 
     <main>
 
-        <!-- Voltar para os planos -->
+        <!-- VOLTAR -->
+
         <a
             href="../planos/index.html"
             class="back"
@@ -30,49 +33,62 @@
         </a>
 
 
-        <!-- Card de cadastro -->
+        <!-- CARD -->
+
         <section class="card">
 
-            <!-- Logo -->
+
+            <!-- LOGO -->
+
             <div class="logo">
                 G
             </div>
 
 
-            <!-- Título -->
+            <!-- TÍTULO -->
+
             <span class="eyebrow">
                 CRIAR CONTA
             </span>
+
 
             <h1>
                 Comece seu Gestok
             </h1>
 
+
             <p>
-                Crie sua conta e comece a usar o Gestok
-                por 30 dias.
+                Crie sua conta e configure o acesso
+                da sua empresa ao Gestok.
             </p>
 
 
-            <!-- Formulário -->
+            <!-- FORMULÁRIO -->
+
             <form>
 
-                <!-- Nome -->
+
+                <!-- NOME DA EMPRESA -->
+
                 <label>
-                    Nome
+
+                    Nome da empresa
 
                     <input
                         id="nome"
                         type="text"
-                        placeholder="Seu nome"
-                        autocomplete="name"
+                        placeholder="Nome da sua empresa"
+                        autocomplete="organization"
                         required
                     >
+
                 </label>
 
 
-                <!-- E-mail -->
+                <!-- E-MAIL -->
+
                 <label>
+
                     E-mail
 
                     <input
@@ -82,11 +98,37 @@
                         autocomplete="email"
                         required
                     >
+
                 </label>
 
 
-                <!-- Senha -->
+                <!-- USUÁRIO -->
+
                 <label>
+
+                    Nome de usuário
+
+                    <input
+                        id="usuario"
+                        type="text"
+                        placeholder="Ex.: joao"
+                        autocomplete="username"
+                        minlength="3"
+                        required
+                    >
+
+                    <small class="field-help">
+                        Você usará esse nome junto com o
+                        Código da Loja para entrar.
+                    </small>
+
+                </label>
+
+
+                <!-- SENHA -->
+
+                <label>
+
                     Senha
 
                     <input
@@ -97,11 +139,14 @@
                         minlength="6"
                         required
                     >
+
                 </label>
 
 
-                <!-- Confirmação da senha -->
+                <!-- CONFIRMAR SENHA -->
+
                 <label>
+
                     Confirmar senha
 
                     <input
@@ -112,10 +157,12 @@
                         minlength="6"
                         required
                     >
+
                 </label>
 
 
-                <!-- Mensagem do formulário -->
+                <!-- MENSAGEM -->
+
                 <div
                     id="mensagemCadastro"
                     class="form-message"
@@ -123,15 +170,20 @@
                 ></div>
 
 
-                <!-- Botão -->
+                <!-- BOTÃO -->
+
                 <button type="submit">
+
                     Criar minha conta →
+
                 </button>
+
 
             </form>
 
 
-            <!-- Login -->
+            <!-- LOGIN -->
+
             <div class="login">
 
                 Já possui uma conta?
@@ -142,15 +194,19 @@
 
             </div>
 
+
         </section>
 
     </main>
 
 
-    <!-- Autenticação -->
+    <!-- AUTENTICAÇÃO -->
+
     <script src="../auth.js"></script>
 
-    <!-- Script do cadastro -->
+
+    <!-- SCRIPT -->
+
     <script src="script.js"></script>
 
 </body>

@@ -1,13 +1,26 @@
 /* =========================================
+   GESTOK - PERFIL
+========================================= */
+
+
+/* =========================================
    SIDEBAR
 ========================================= */
 
-const sidebar = document.getElementById("sidebar");
-const overlay = document.getElementById("overlay");
-const menuButton = document.getElementById("menuButton");
-const closeSidebar = document.getElementById("closeSidebar");
+const sidebar =
+    document.getElementById("sidebar");
 
+const overlay =
+    document.getElementById("overlay");
 
+const menuButton =
+    document.getElementById("menuButton");
+
+const closeSidebar =
+    document.getElementById("closeSidebar");
+
+const codigoLoja =
+    document.getElementById("codigoLoja");
 function abrirMenu() {
 
     if (sidebar) {
@@ -18,7 +31,9 @@ function abrirMenu() {
         overlay.classList.add("active");
     }
 
-    document.body.style.overflow = "hidden";
+    document.body.style.overflow =
+        "hidden";
+
 }
 
 
@@ -32,163 +47,447 @@ function fecharMenu() {
         overlay.classList.remove("active");
     }
 
-    document.body.style.overflow = "";
+    document.body.style.overflow =
+        "";
+
 }
 
 
 if (menuButton) {
-    menuButton.addEventListener("click", abrirMenu);
+
+    menuButton.addEventListener(
+        "click",
+        abrirMenu
+    );
+
 }
 
 
 if (closeSidebar) {
-    closeSidebar.addEventListener("click", fecharMenu);
+
+    closeSidebar.addEventListener(
+        "click",
+        fecharMenu
+    );
+
 }
 
 
 if (overlay) {
-    overlay.addEventListener("click", fecharMenu);
+
+    overlay.addEventListener(
+        "click",
+        fecharMenu
+    );
+
 }
 
 
-document.addEventListener("keydown", function(event) {
+document.addEventListener(
+    "keydown",
+    function (event) {
 
-    if (event.key === "Escape") {
-        fecharMenu();
+        if (event.key === "Escape") {
+
+            fecharMenu();
+
+        }
+
     }
-
-});
-
+);
 
 
 /* =========================================
    ABAS
 ========================================= */
 
-const tabs = document.querySelectorAll(".tab");
-const tabContents = document.querySelectorAll(".tab-content");
+const tabs =
+    document.querySelectorAll(".tab");
+
+const tabContents =
+    document.querySelectorAll(
+        ".tab-content"
+    );
 
 
-tabs.forEach(function(tab) {
+tabs.forEach(function (tab) {
 
-    tab.addEventListener("click", function() {
+    tab.addEventListener(
+        "click",
+        function () {
 
-        const target = tab.dataset.tab;
-
-
-        tabs.forEach(function(item) {
-            item.classList.remove("active");
-        });
+            const target =
+                tab.dataset.tab;
 
 
-        tabContents.forEach(function(content) {
-            content.classList.remove("active");
-        });
+            tabs.forEach(
+                function (item) {
+
+                    item.classList.remove(
+                        "active"
+                    );
+
+                }
+            );
 
 
-        tab.classList.add("active");
+            tabContents.forEach(
+                function (content) {
+
+                    content.classList.remove(
+                        "active"
+                    );
+
+                }
+            );
 
 
-        const targetContent = document.getElementById(target);
+            tab.classList.add(
+                "active"
+            );
 
-        if (targetContent) {
-            targetContent.classList.add("active");
+
+            const targetContent =
+                document.getElementById(
+                    target
+                );
+
+
+            if (targetContent) {
+
+                targetContent.classList.add(
+                    "active"
+                );
+
+            }
+
         }
-
-    });
+    );
 
 });
 
 
-
 /* =========================================
-   PERFIL
+   ELEMENTOS DO PERFIL
 ========================================= */
 
-const nameInput = document.getElementById("nameInput");
-const emailInput = document.getElementById("emailInput");
+const nameInput =
+    document.getElementById(
+        "nameInput"
+    );
 
-const headerName = document.getElementById("headerName");
-const headerAvatar = document.getElementById("headerAvatar");
+const emailInput =
+    document.getElementById(
+        "emailInput"
+    );
 
-const saveProfile = document.getElementById("saveProfile");
-const savedMessage = document.getElementById("savedMessage");
+const headerName =
+    document.getElementById(
+        "nomeUsuarioMenu"
+    );
 
+const headerAvatar =
+    document.getElementById(
+        "headerAvatar"
+    );
 
-/* Carrega dados salvos */
+const saveProfile =
+    document.getElementById(
+        "saveProfile"
+    );
 
-const savedName = localStorage.getItem("gestok_nome");
-const savedEmail = localStorage.getItem("gestok_email");
-
-
-if (savedName) {
-
-    nameInput.value = savedName;
-
-    headerName.textContent = savedName;
-
-    headerAvatar.textContent =
-        savedName.charAt(0).toUpperCase();
-
-}
-
-
-if (savedEmail) {
-    emailInput.value = savedEmail;
-}
+const savedMessage =
+    document.getElementById(
+        "savedMessage"
+    );
 
 
+/* =========================================
+   CARREGAR CONTA DO USUÁRIO
+========================================= */
 
-/* Salvar perfil */
+function obterContaGestokPerfil() {
 
-if (saveProfile) {
+    try {
 
-    saveProfile.addEventListener("click", function() {
+        const dados =
+            localStorage.getItem(
+                "gestok_conta"
+            );
 
-        const name = nameInput.value.trim();
-        const email = emailInput.value.trim();
 
+        if (!dados) {
 
-        if (!name) {
+            return null;
 
-            alert("Digite seu nome.");
-
-            return;
         }
 
 
-        localStorage.setItem(
-            "gestok_nome",
-            name
+        const conta =
+            JSON.parse(dados);
+
+
+        if (
+            !conta ||
+            typeof conta !== "object"
+        ) {
+
+            return null;
+
+        }
+
+
+        return conta;
+
+    } catch (erro) {
+
+        console.error(
+            "Erro ao carregar conta:",
+            erro
         );
 
+        return null;
 
-        localStorage.setItem(
-            "gestok_email",
-            email
-        );
-
-
-        headerName.textContent = name;
-
-        headerAvatar.textContent =
-            name.charAt(0).toUpperCase();
-
-
-        savedMessage.textContent =
-            "Dados salvos!";
-
-
-        setTimeout(function() {
-
-            savedMessage.textContent = "";
-
-        }, 2500);
-
-    });
+    }
 
 }
 
+
+/* =========================================
+   ATUALIZAR NOME NO PERFIL
+========================================= */
+
+function atualizarDadosPerfil() {
+
+    const conta =
+        obterContaGestokPerfil();
+
+
+    if (!conta) {
+
+        console.warn(
+            "Conta Gestok não encontrada."
+        );
+
+        return;
+
+    }
+
+
+    /* =====================================
+       CÓDIGO DA LOJA
+    ===================================== */
+
+    const codigoLoja =
+        document.getElementById("codigoLoja");
+
+
+    if (codigoLoja) {
+
+        codigoLoja.textContent =
+            conta.codigoLoja || "----";
+
+    }
+
+
+    const nome =
+        String(
+            conta.nome || ""
+        ).trim();
+
+
+    const email =
+        String(
+            conta.email || ""
+        ).trim();
+
+
+    /* =====================================
+       CAMPO NOME
+    ===================================== */
+
+    if (
+        nameInput &&
+        nome
+    ) {
+
+        nameInput.value =
+            nome;
+
+    }
+
+
+    /* =====================================
+       CAMPO E-MAIL
+    ===================================== */
+
+    if (
+        emailInput &&
+        email
+    ) {
+
+        emailInput.value =
+            email;
+
+    }
+
+
+    /* =====================================
+       NOME NO HEADER
+    ===================================== */
+
+    if (
+        headerName &&
+        nome
+    ) {
+
+        headerName.textContent =
+            nome;
+
+    }
+
+
+    /* =====================================
+       AVATAR
+    ===================================== */
+
+    if (
+        headerAvatar &&
+        nome
+    ) {
+
+        headerAvatar.textContent =
+            nome
+                .charAt(0)
+                .toUpperCase();
+
+    }
+
+}
+
+
+/* =========================================
+   SALVAR ALTERAÇÕES DO PERFIL
+========================================= */
+
+if (saveProfile) {
+
+    saveProfile.addEventListener(
+        "click",
+        function () {
+
+            const nome =
+                nameInput
+                    ? nameInput.value.trim()
+                    : "";
+
+
+            const email =
+                emailInput
+                    ? emailInput.value.trim()
+                    : "";
+
+
+            if (!nome) {
+
+                alert(
+                    "Digite seu nome."
+                );
+
+                return;
+
+            }
+
+
+            const conta =
+                obterContaGestokPerfil();
+
+
+            if (!conta) {
+
+                alert(
+                    "Conta do usuário não encontrada."
+                );
+
+                return;
+
+            }
+
+
+            /* Atualiza os dados da conta */
+
+            conta.nome =
+                nome;
+
+            conta.email =
+                email.toLowerCase();
+
+
+            /* Salva a conta atualizada */
+
+            localStorage.setItem(
+                "gestok_conta",
+                JSON.stringify(conta)
+            );
+
+
+            /* Atualiza também as chaves antigas
+               para manter compatibilidade */
+
+            localStorage.setItem(
+                "gestok_nome",
+                nome
+            );
+
+
+            localStorage.setItem(
+                "gestok_email",
+                email
+            );
+
+
+            /* Atualiza a tela */
+
+            if (headerName) {
+
+                headerName.textContent =
+                    nome;
+
+            }
+
+
+            if (headerAvatar) {
+
+                headerAvatar.textContent =
+                    nome
+                        .charAt(0)
+                        .toUpperCase();
+
+            }
+
+
+            if (savedMessage) {
+
+                savedMessage.textContent =
+                    "Dados salvos!";
+
+
+                setTimeout(
+                    function () {
+
+                        savedMessage.textContent =
+                            "";
+
+                    },
+                    2500
+                );
+
+            }
+
+        }
+    );
+
+}
 
 
 /* =========================================
@@ -196,54 +495,103 @@ if (saveProfile) {
 ========================================= */
 
 const changePassword =
-    document.getElementById("changePassword");
-
+    document.getElementById(
+        "changePassword"
+    );
 
 const passwordInput =
-    document.getElementById("passwordInput");
+    document.getElementById(
+        "passwordInput"
+    );
 
 
 if (changePassword) {
 
-    changePassword.addEventListener("click", function() {
+    changePassword.addEventListener(
+        "click",
+        function () {
 
-        const password =
-            passwordInput.value.trim();
-
-
-        if (!password) {
-
-            alert("Digite uma nova senha.");
-
-            return;
-        }
+            const password =
+                passwordInput
+                    ? passwordInput.value.trim()
+                    : "";
 
 
-        if (password.length < 6) {
+            if (!password) {
 
-            alert(
-                "A senha precisa ter pelo menos 6 caracteres."
+                alert(
+                    "Digite uma nova senha."
+                );
+
+                return;
+
+            }
+
+
+            if (
+                password.length < 6
+            ) {
+
+                alert(
+                    "A senha precisa ter pelo menos 6 caracteres."
+                );
+
+                return;
+
+            }
+
+
+            const conta =
+                obterContaGestokPerfil();
+
+
+            if (!conta) {
+
+                alert(
+                    "Conta do usuário não encontrada."
+                );
+
+                return;
+
+            }
+
+
+            /* Atualiza a senha na conta */
+
+            conta.senha =
+                password;
+
+
+            localStorage.setItem(
+                "gestok_conta",
+                JSON.stringify(conta)
             );
 
-            return;
+
+            /* Mantém compatibilidade */
+
+            localStorage.setItem(
+                "gestok_senha",
+                password
+            );
+
+
+            if (passwordInput) {
+
+                passwordInput.value =
+                    "";
+
+            }
+
+
+            alert(
+                "Senha alterada com sucesso!"
+            );
+
         }
-
-
-        localStorage.setItem(
-            "gestok_senha",
-            password
-        );
-
-
-        passwordInput.value = "";
-
-
-        alert("Senha alterada com sucesso!");
-
-    });
+    );
 
 }
-
 
 
 /* =========================================
@@ -251,20 +599,29 @@ if (changePassword) {
 ========================================= */
 
 const subscriptionStatus =
-    document.getElementById("subscriptionStatus");
+    document.getElementById(
+        "subscriptionStatus"
+    );
 
 const startDate =
-    document.getElementById("startDate");
+    document.getElementById(
+        "startDate"
+    );
 
 const endDate =
-    document.getElementById("endDate");
+    document.getElementById(
+        "endDate"
+    );
 
 const daysRemaining =
-    document.getElementById("daysRemaining");
+    document.getElementById(
+        "daysRemaining"
+    );
 
 const subscribeButton =
-    document.getElementById("subscribeButton");
-
+    document.getElementById(
+        "subscribeButton"
+    );
 
 
 function formatarData(data) {
@@ -274,7 +631,6 @@ function formatarData(data) {
     );
 
 }
-
 
 
 function atualizarAssinatura() {
@@ -287,21 +643,40 @@ function atualizarAssinatura() {
 
     if (!assinatura) {
 
-        subscriptionStatus.textContent =
-            "Inativo";
+        if (subscriptionStatus) {
 
-        subscriptionStatus.classList.remove(
-            "active"
-        );
+            subscriptionStatus.textContent =
+                "Inativo";
 
-        startDate.textContent = "—";
+            subscriptionStatus.classList.remove(
+                "active"
+            );
 
-        endDate.textContent = "—";
+        }
 
-        daysRemaining.textContent = "—";
 
-        subscribeButton.textContent =
-            "Assinar por R$ 30,00";
+        if (startDate) {
+            startDate.textContent = "—";
+        }
+
+
+        if (endDate) {
+            endDate.textContent = "—";
+        }
+
+
+        if (daysRemaining) {
+            daysRemaining.textContent = "—";
+        }
+
+
+        if (subscribeButton) {
+
+            subscribeButton.textContent =
+                "Assinar por R$ 30,00";
+
+        }
+
 
         return;
 
@@ -329,50 +704,85 @@ function atualizarAssinatura() {
 
     if (dias > 0) {
 
-        subscriptionStatus.textContent =
-            "Ativo";
+        if (subscriptionStatus) {
 
-        subscriptionStatus.classList.add(
-            "active"
-        );
+            subscriptionStatus.textContent =
+                "Ativo";
 
-        startDate.textContent =
-            localStorage.getItem(
-                "gestok_inicio_assinatura"
-            ) || "—";
+            subscriptionStatus.classList.add(
+                "active"
+            );
 
-        endDate.textContent =
-            formatarData(dataFinal);
+        }
 
-        daysRemaining.textContent =
-            dias + " dias";
 
-        subscribeButton.textContent =
-            "Renovar por R$ 30,00";
+        if (startDate) {
+
+            startDate.textContent =
+                localStorage.getItem(
+                    "gestok_inicio_assinatura"
+                ) || "—";
+
+        }
+
+
+        if (endDate) {
+
+            endDate.textContent =
+                formatarData(
+                    dataFinal
+                );
+
+        }
+
+
+        if (daysRemaining) {
+
+            daysRemaining.textContent =
+                dias + " dias";
+
+        }
+
+
+        if (subscribeButton) {
+
+            subscribeButton.textContent =
+                "Renovar por R$ 30,00";
+
+        }
 
     } else {
 
-        subscriptionStatus.textContent =
-            "Expirada";
+        if (subscriptionStatus) {
 
-        subscriptionStatus.classList.remove(
-            "active"
-        );
+            subscriptionStatus.textContent =
+                "Expirada";
 
-        daysRemaining.textContent =
-            "0 dias";
+            subscriptionStatus.classList.remove(
+                "active"
+            );
 
-        subscribeButton.textContent =
-            "Assinar novamente - R$ 30,00";
+        }
+
+
+        if (daysRemaining) {
+
+            daysRemaining.textContent =
+                "0 dias";
+
+        }
+
+
+        if (subscribeButton) {
+
+            subscribeButton.textContent =
+                "Assinar novamente - R$ 30,00";
+
+        }
 
     }
 
 }
-
-
-
-atualizarAssinatura();
-
 
 
 /* =========================================
@@ -383,20 +793,16 @@ if (subscribeButton) {
 
     subscribeButton.addEventListener(
         "click",
-        function() {
-
-            /*
-             * TEMPORÁRIO:
-             * Aqui depois vamos colocar
-             * o pagamento PIX/cartão real.
-             */
+        function () {
 
             const agora =
                 new Date();
 
 
             const vencimento =
-                new Date(agora);
+                new Date(
+                    agora
+                );
 
 
             vencimento.setDate(
@@ -406,7 +812,9 @@ if (subscribeButton) {
 
             localStorage.setItem(
                 "gestok_inicio_assinatura",
-                formatarData(agora)
+                formatarData(
+                    agora
+                )
             );
 
 
@@ -427,3 +835,56 @@ if (subscribeButton) {
     );
 
 }
+
+
+/* =========================================
+   INICIALIZAÇÃO
+========================================= */
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
+
+        atualizarDadosPerfil();
+
+        atualizarAssinatura();
+
+    }
+);
+
+
+/* =========================================
+   ATUALIZAR SE A CONTA MUDAR
+========================================= */
+
+window.addEventListener(
+    "storage",
+    function (evento) {
+
+        if (
+            evento.key ===
+            "gestok_conta"
+        ) {
+
+            atualizarDadosPerfil();
+
+        }
+
+    }
+);
+
+
+/* =========================================
+   ATUALIZAR AO VOLTAR PARA A PÁGINA
+========================================= */
+
+window.addEventListener(
+    "pageshow",
+    function () {
+
+        atualizarDadosPerfil();
+
+        atualizarAssinatura();
+
+    }
+);

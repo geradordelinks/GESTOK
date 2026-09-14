@@ -1,9 +1,13 @@
 /* =========================================
-   GESTOK - AUTENTICAÇÃO E ASSINATURA
+   GESTOK - AUTENTICAÇÃO
+   CÓDIGO DA LOJA + USUÁRIO + SENHA
 ========================================= */
 
 const GESTOK_CONTA = "gestok_conta";
 const GESTOK_SESSAO = "gestok_sessao";
+
+const GESTOK_PROXIMO_CODIGO_LOJA =
+    "gestok_proximo_codigo_loja";
 
 
 /* =========================================
@@ -18,11 +22,17 @@ function obterContaGestok() {
             localStorage.getItem(GESTOK_CONTA) || "null"
         );
 
-        return conta && typeof conta === "object"
+        return conta &&
+            typeof conta === "object"
             ? conta
             : null;
 
     } catch (erro) {
+
+        console.error(
+            "Erro ao carregar conta:",
+            erro
+        );
 
         return null;
 
@@ -43,7 +53,8 @@ function obterSessaoGestok() {
             localStorage.getItem(GESTOK_SESSAO) || "null"
         );
 
-        return sessao && typeof sessao === "object"
+        return sessao &&
+            typeof sessao === "object"
             ? sessao
             : null;
 
@@ -57,18 +68,70 @@ function obterSessaoGestok() {
 
 
 /* =========================================
+   GERAR CÓDIGO DA LOJA
+========================================= */
+
+function gerarCodigoLojaGestok() {
+
+    let proximo = Number(
+
+        localStorage.getItem(
+            GESTOK_PROXIMO_CODIGO_LOJA
+        ) || "1"
+
+    );
+
+
+    if (
+        !Number.isInteger(proximo) ||
+        proximo < 1
+    ) {
+
+        proximo = 1;
+
+    }
+
+
+    const codigo = String(proximo)
+        .padStart(4, "0");
+
+
+    localStorage.setItem(
+
+        GESTOK_PROXIMO_CODIGO_LOJA,
+
+        String(proximo + 1)
+
+    );
+
+
+    return codigo;
+
+}
+
+
+/* =========================================
    VERIFICAR PAGAMENTO
 ========================================= */
 
 function pagamentoAprovadoGestok(conta) {
 
-    if (!conta || !conta.assinatura) {
+    if (
+        !conta ||
+        !conta.assinatura
+    ) {
+
         return false;
+
     }
 
+
     return (
+
         conta.assinatura.status === "ativa" &&
+
         conta.assinatura.pagamento === "aprovado"
+
     );
 
 }
@@ -80,18 +143,28 @@ function pagamentoAprovadoGestok(conta) {
 
 function assinaturaAtivaGestok(conta) {
 
-    if (!pagamentoAprovadoGestok(conta)) {
+    if (
+        !pagamentoAprovadoGestok(conta)
+    ) {
+
         return false;
+
     }
 
+
     const vencimento =
+
         new Date(
             conta.assinatura.vencimento
         ).getTime();
 
+
     return (
+
         Number.isFinite(vencimento) &&
+
         vencimento > Date.now()
+
     );
 
 }
@@ -109,11 +182,15 @@ function usuarioLogadoGestok() {
     const sessao =
         obterSessaoGestok();
 
+
     return Boolean(
 
         conta &&
+
         sessao &&
+
         sessao.logado === true &&
+
         assinaturaAtivaGestok(conta)
 
     );
@@ -127,7 +204,7 @@ function usuarioLogadoGestok() {
 
 function caminhoSistemaGestok() {
 
-    return "sistema/index.html";
+    return "../sistema/index.html";
 
 }
 
@@ -155,7 +232,7 @@ function caminhoPagamentoGestok() {
 
 
 /* =========================================
-   EXIGIR LOGIN + PAGAMENTO
+   EXIGIR LOGIN
 ========================================= */
 
 function exigirLoginGestok() {
@@ -186,20 +263,24 @@ function exigirLoginGestok() {
 
 
     const paginaPublica =
-        paginasPublicas.some(function (item) {
+        paginasPublicas.some(
+            function (item) {
 
-            return pagina.endsWith(item);
+                return pagina.endsWith(item);
 
-        });
+            }
+        );
 
 
     if (paginaPublica) {
+
         return true;
+
     }
 
 
     /* -----------------------------------------
-       NÃO POSSUI CONTA
+       SEM CONTA
     ----------------------------------------- */
 
     if (!conta) {
@@ -214,7 +295,7 @@ function exigirLoginGestok() {
 
 
     /* -----------------------------------------
-       NÃO ESTÁ LOGADO
+       SEM SESSÃO
     ----------------------------------------- */
 
     if (
@@ -232,10 +313,12 @@ function exigirLoginGestok() {
 
 
     /* -----------------------------------------
-       CONTA SEM PAGAMENTO
+       PAGAMENTO PENDENTE
     ----------------------------------------- */
 
-    if (!pagamentoAprovadoGestok(conta)) {
+    if (
+        !pagamentoAprovadoGestok(conta)
+    ) {
 
         window.location.replace(
             caminhoPagamentoGestok()
@@ -247,22 +330,30 @@ function exigirLoginGestok() {
 
 
     /* -----------------------------------------
-       PAGAMENTO APROVADO, MAS ASSINATURA EXPIRADA
+       ASSINATURA EXPIRADA
     ----------------------------------------- */
 
-    if (!assinaturaAtivaGestok(conta)) {
+    if (
+        !assinaturaAtivaGestok(conta)
+    ) {
 
         conta.assinatura.status =
             "expirada";
 
+
         localStorage.setItem(
+
             GESTOK_CONTA,
+
             JSON.stringify(conta)
+
         );
+
 
         window.location.replace(
             caminhoPagamentoGestok()
         );
+
 
         return false;
 
@@ -279,9 +370,15 @@ function exigirLoginGestok() {
 ========================================= */
 
 function criarContaGestok(
+
     nome,
+
     email,
+
+    usuario,
+
     senha
+
 ) {
 
     const contaExistente =
@@ -302,6 +399,79 @@ function criarContaGestok(
     }
 
 
+    nome =
+        String(nome || "").trim();
+
+    email =
+        String(email || "")
+            .trim()
+            .toLowerCase();
+
+    usuario =
+        String(usuario || "")
+            .trim()
+            .toLowerCase();
+
+    senha =
+        String(senha || "");
+
+
+    if (!nome) {
+
+        return {
+
+            ok: false,
+
+            mensagem:
+                "Digite o nome da empresa."
+
+        };
+
+    }
+
+
+    if (!email) {
+
+        return {
+
+            ok: false,
+
+            mensagem:
+                "Digite seu e-mail."
+
+        };
+
+    }
+
+
+    if (!usuario) {
+
+        return {
+
+            ok: false,
+
+            mensagem:
+                "Digite um nome de usuário."
+
+        };
+
+    }
+
+
+    if (senha.length < 6) {
+
+        return {
+
+            ok: false,
+
+            mensagem:
+                "A senha precisa ter pelo menos 6 caracteres."
+
+        };
+
+    }
+
+
     const agora =
         new Date();
 
@@ -309,13 +479,19 @@ function criarContaGestok(
     const conta = {
 
         nome:
-            nome.trim(),
+            nome,
 
         email:
-            email.trim().toLowerCase(),
+            email,
+
+        usuario:
+            usuario,
 
         senha:
             senha,
+
+        codigoLoja:
+            null,
 
         criadaEm:
             agora.toISOString(),
@@ -349,15 +525,13 @@ function criarContaGestok(
 
 
     localStorage.setItem(
+
         GESTOK_CONTA,
+
         JSON.stringify(conta)
+
     );
 
-
-    /*
-     * A conta existe,
-     * mas ainda NÃO está logada.
-     */
 
     localStorage.removeItem(
         GESTOK_SESSAO
@@ -368,7 +542,8 @@ function criarContaGestok(
 
         ok: true,
 
-        conta: conta
+        conta:
+            conta
 
     };
 
@@ -377,11 +552,17 @@ function criarContaGestok(
 
 /* =========================================
    LOGIN
+   CÓDIGO + USUÁRIO + SENHA
 ========================================= */
 
 function entrarGestok(
-    email,
+
+    codigoLoja,
+
+    usuario,
+
     senha
+
 ) {
 
     const conta =
@@ -402,14 +583,28 @@ function entrarGestok(
     }
 
 
+    codigoLoja =
+        String(codigoLoja || "")
+            .trim();
+
+
+    usuario =
+        String(usuario || "")
+            .trim()
+            .toLowerCase();
+
+
+    senha =
+        String(senha || "");
+
+
+    /* -----------------------------------------
+       VERIFICAR CÓDIGO DA LOJA
+    ----------------------------------------- */
+
     if (
-
-        conta.email !==
-            email.trim().toLowerCase() ||
-
-        conta.senha !==
-            senha
-
+        conta.codigoLoja !==
+        codigoLoja
     ) {
 
         return {
@@ -417,17 +612,58 @@ function entrarGestok(
             ok: false,
 
             mensagem:
-                "E-mail ou senha incorretos."
+                "Código da Loja incorreto."
 
         };
 
     }
 
 
-    /*
-     * Login permitido mesmo antes do pagamento,
-     * porém o sistema continuará bloqueado.
-     */
+    /* -----------------------------------------
+       VERIFICAR USUÁRIO
+    ----------------------------------------- */
+
+    if (
+        conta.usuario !==
+        usuario
+    ) {
+
+        return {
+
+            ok: false,
+
+            mensagem:
+                "Usuário incorreto."
+
+        };
+
+    }
+
+
+    /* -----------------------------------------
+       VERIFICAR SENHA
+    ----------------------------------------- */
+
+    if (
+        conta.senha !==
+        senha
+    ) {
+
+        return {
+
+            ok: false,
+
+            mensagem:
+                "Senha incorreta."
+
+        };
+
+    }
+
+
+    /* -----------------------------------------
+       CRIAR SESSÃO
+    ----------------------------------------- */
 
     localStorage.setItem(
 
@@ -435,7 +671,14 @@ function entrarGestok(
 
         JSON.stringify({
 
-            logado: true,
+            logado:
+                true,
+
+            codigoLoja:
+                conta.codigoLoja,
+
+            usuario:
+                conta.usuario,
 
             loginEm:
                 new Date().toISOString()
@@ -449,7 +692,8 @@ function entrarGestok(
 
         ok: true,
 
-        conta: conta
+        conta:
+            conta
 
     };
 
@@ -480,6 +724,19 @@ function aprovarPagamentoGestok() {
     }
 
 
+    /* -----------------------------------------
+       GERAR CÓDIGO DA LOJA
+       SOMENTE UMA VEZ
+    ----------------------------------------- */
+
+    if (!conta.codigoLoja) {
+
+        conta.codigoLoja =
+            gerarCodigoLojaGestok();
+
+    }
+
+
     const agora =
         new Date();
 
@@ -489,7 +746,9 @@ function aprovarPagamentoGestok() {
 
 
     vencimento.setDate(
+
         vencimento.getDate() + 30
+
     );
 
 
@@ -518,13 +777,24 @@ function aprovarPagamentoGestok() {
     );
 
 
+    /* -----------------------------------------
+       CRIAR SESSÃO
+    ----------------------------------------- */
+
     localStorage.setItem(
 
         GESTOK_SESSAO,
 
         JSON.stringify({
 
-            logado: true,
+            logado:
+                true,
+
+            codigoLoja:
+                conta.codigoLoja,
+
+            usuario:
+                conta.usuario,
 
             loginEm:
                 agora.toISOString()
@@ -538,7 +808,8 @@ function aprovarPagamentoGestok() {
 
         ok: true,
 
-        conta: conta
+        conta:
+            conta
 
     };
 
@@ -567,13 +838,20 @@ function sairGestok() {
 ========================================= */
 
 function diasRestantesGestok(
-    conta = obterContaGestok()
+
+    conta =
+        obterContaGestok()
+
 ) {
 
     if (
+
         !conta ||
+
         !conta.assinatura ||
+
         !conta.assinatura.vencimento
+
     ) {
 
         return 0;

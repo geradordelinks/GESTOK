@@ -21,7 +21,7 @@
 
         <div class="sidebar-top">
 
-            <a href="../index.html" class="brand">
+            <a href="../sistema/index.html" class="brand">
 
                 <div class="brand-icon">
                     G
@@ -47,7 +47,7 @@
                 PRINCIPAL
             </div>
 
-            <a href="../index.html" class="nav-item">
+            <a href="../sistema/index.html" class="nav-item">
 
                 <span class="nav-icon">⌂</span>
 
@@ -181,22 +181,21 @@
 
             <button class="user-profile" id="userProfile">
 
-                <div class="avatar" id="headerAvatar">
-                    L
-                </div>
+            <div class="avatar" id="headerAvatar">
+                U
+            </div>
 
-                <div class="user-info">
+            <div class="user-info">
 
-                    <strong id="headerName">
-                        Lucas
-                    </strong>
+                <strong id="nomeUsuarioMenu">
+                    Usuário
+                </strong>
 
-                    <span>
-                        Administrador
-                    </span>
+                <span>
+                    Administrador
+                </span>
 
-                </div>
-
+            </div>
                 <span class="user-arrow">
                     ⌄
                 </span>
@@ -214,7 +213,7 @@
 
 
         <!-- VOLTAR -->
-        <a href="../index.html" class="back-dashboard">
+        <a href="../sistema/index.html" class="back-dashboard">
             ← Voltar ao Dashboard
         </a>
 
@@ -249,11 +248,11 @@
         <div class="profile-tabs">
 
             <button class="tab active" data-tab="perfil">
-                👤 Perfil
+                 Perfil
             </button>
 
             <button class="tab" data-tab="assinatura">
-                💳 Assinatura
+                 Assinatura
             </button>
 
         </div>
@@ -264,56 +263,80 @@
         <section class="tab-content active" id="perfil">
 
 
-            <div class="card profile-card">
+           <div class="card profile-card">
 
-                <div class="card-title">
+            <div class="card-title">
 
-                    <div>
+                <div>
 
-                        <h2>
-                            Informações pessoais
-                        </h2>
+                    <h2>Informações pessoais</h2>
 
-                        <p>
-                            Atualize seus dados.
-                        </p>
-
-                    </div>
+                    <p>Atualize seus dados.</p>
 
                 </div>
 
-
-                <label>
-                    Nome
-
-                    <input
-                        type="text"
-                        id="nameInput"
-                        value="Lucas"
-                    >
-
-                </label>
+            </div>
 
 
-                <label>
-                    E-mail
+            <!-- CÓDIGO DA LOJA -->
 
-                    <input
-                        type="email"
-                        id="emailInput"
-                        placeholder="Digite seu e-mail"
-                    >
+            <div class="store-code">
 
-                </label>
+                <span>
+                    Código da Loja
+                </span>
 
+                <strong id="codigoLoja">
+                    ----
+                </strong>
 
-                <button class="primary" id="saveProfile">
-                    Salvar alterações
-                </button>
-
-                <span class="saved" id="savedMessage"></span>
+                <small>
+                    Identificação exclusiva da sua empresa
+                </small>
 
             </div>
+
+
+            <label>
+
+                Nome
+
+                <input
+                    type="text"
+                    id="nameInput"
+                    value=""
+                >
+
+            </label>
+
+
+            <label>
+
+                E-mail
+
+                <input
+                    type="email"
+                    id="emailInput"
+                    placeholder="Digite seu e-mail"
+                >
+
+            </label>
+
+
+            <button
+                class="primary"
+                id="saveProfile"
+            >
+                Salvar alterações
+            </button>
+
+
+            <span
+                class="saved"
+                id="savedMessage"
+            ></span>
+
+        </div>
 
 
             <div class="card">
@@ -483,8 +506,6 @@
 
 
     </main>
-
-
     <script src="script.js"></script>
 
 </body>
