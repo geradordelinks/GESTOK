@@ -8,155 +8,14 @@
     <title>Meu Perfil - Gestok</title>
 
     <link rel="stylesheet" href="style.css">
+        <link
+        rel="stylesheet"
+        href="../componentes/sidebar.css"
+    >
 </head>
 
 <body>
-
-    <!-- OVERLAY -->
-    <div class="overlay" id="overlay"></div>
-
-
-    <!-- SIDEBAR -->
-    <aside class="sidebar" id="sidebar">
-
-        <div class="sidebar-top">
-
-            <a href="../sistema/index.html" class="brand">
-
-                <div class="brand-icon">
-                    G
-                </div>
-
-                <div>
-                    <strong>Gestok</strong>
-                    <span>Gestão de estoque</span>
-                </div>
-
-            </a>
-
-            <button class="close-sidebar" id="closeSidebar">
-                ×
-            </button>
-
-        </div>
-
-
-        <nav class="navigation">
-
-            <div class="nav-title">
-                PRINCIPAL
-            </div>
-
-            <a href="../sistema/index.html" class="nav-item">
-
-                <span class="nav-icon">⌂</span>
-
-                Dashboard
-
-            </a>
-
-
-            <div class="nav-title">
-                ESTOQUE
-            </div>
-
-            <a href="../produtos/consulta/index.html" class="nav-item">
-
-                <span class="nav-icon">▣</span>
-
-                Produtos
-
-            </a>
-
-
-            <a href="../produtos/index.html#novo"
-               class="nav-item nav-create-product">
-
-                <span class="nav-icon">＋</span>
-
-                <strong>Criar produto</strong>
-
-            </a>
-
-
-            <a href="../entrada/index.html" class="nav-item">
-
-                <span class="nav-icon">↓</span>
-
-                Entrada
-
-            </a>
-
-
-            <a href="../saida/index.html" class="nav-item">
-
-                <span class="nav-icon">↑</span>
-
-                Saída
-
-            </a>
-
-
-            <div class="nav-title">
-                GESTÃO
-            </div>
-
-            <a href="#" class="nav-item">
-
-                <span class="nav-icon">↔</span>
-
-                Movimentações
-
-            </a>
-
-
-            <a href="#" class="nav-item">
-
-                <span class="nav-icon">☷</span>
-
-                Solicitações
-
-            </a>
-
-
-            <a href="#" class="nav-item">
-
-                <span class="nav-icon">♙</span>
-
-                Operadores
-
-            </a>
-
-        <a href="index.html" class="nav-item"
-            class="nav-item active">
-            <span class="nav-icon">◉</span>
-            <span>Perfil</span>
-        </a>
-        </nav>
-
-
-        <div class="sidebar-bottom">
-
-            <div class="system-status">
-
-                <span class="status-dot"></span>
-
-                <div>
-
-                    <strong>Sistema online</strong>
-
-                    <small>Todos os serviços funcionando</small>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </aside>
-
-
-
+    <div id="gestok-sidebar-container"></div>
     <!-- HEADER -->
     <header class="header">
 
@@ -506,8 +365,8 @@
 
 
     </main>
+    <script src="../componentes/sidebar.js"></script>
     <script src="script.js"></script>
-
 </body>
 
 </html>

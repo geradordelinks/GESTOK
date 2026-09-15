@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Gestok | Meus chamados</title>
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+
+</head>
+
+<body>
+
+
+    <!-- =========================================
+         OVERLAY
+    ========================================== -->
+
+    <div
+        class="overlay"
+        id="overlay"
+    ></div>
+
+
+    <!-- =========================================
+         SIDEBAR
+    ========================================== -->
+
+    <aside
+        class="sidebar"
+        id="sidebar"
+    >
+
+        <div class="sidebar-top">
+
+            <a
+                class="brand"
+                href="../../sistema/index.html"
+            >
+
+                <div class="brand-icon">
+                    G
+                </div>
+
+                <div class="brand-text">
+
+                    <strong>
+                        Gestok
+                    </strong>
+
+                    <small>
+                        Gestão de estoque
+                    </small>
+
+                </div>
+
+            </a>
+
+
+            <button
+                class="close-sidebar"
+                id="closeSidebar"
+                type="button"
+                aria-label="Fechar menu"
+            >
+                ×
+            </button>
+
+        </div>
+
+
+        <nav class="navigation">
+
+
+            <span class="nav-title">
+                PRINCIPAL
+            </span>
+
+
+            <a
+                class="nav-item"
+                href="../../sistema/index.html"
+            >
+
+                <span class="nav-icon">
+                    ⌂
+                </span>
+
+                <span>
+                    Dashboard
+                </span>
+
+            </a>
+
+
+            <a
+                class="nav-item"
+                href="../../produtos/consulta/index.html"
+            >
+
+                <span class="nav-icon">
+                    ▣
+                </span>
+
+                <span>
+                    Produtos
+                </span>
+
+            </a>
+
+
+            <a
+                class="nav-item nav-create-product"
+                href="../../produtos/index.html#novo"
+            >
+
+                <span class="nav-icon">
+                    ＋
+                </span>
+
+                <div class="create-product-text">
+
+                    <strong>
+                        Criar produto
+                    </strong>
+
+                    <small>
+                        Novo item no estoque
+                    </small>
+
+                </div>
+
+            </a>
+
+
+            <span class="nav-title">
+                ESTOQUE
+            </span>
+
+
+            <a
+                class="nav-item"
+                href="../../entrada/index.html"
+            >
+
+                <span class="nav-icon">
+                    ↓
+                </span>
+
+                <span>
+                    Entrada
+                </span>
+
+            </a>
+
+
+            <a
+                class="nav-item"
+                href="../../saida/index.html"
+            >
+
+                <span class="nav-icon">
+                    ↑
+                </span>
+
+                <span>
+                    Saída
+                </span>
+
+            </a>
+
+
+            <a
+                class="nav-item"
+                href="../../movimentacoes/index.html"
+            >
+
+                <span class="nav-icon">
+                    ↔
+                </span>
+
+                <span>
+                    Movimentações
+                </span>
+
+            </a>
+
+
+            <span class="nav-title">
+                GESTÃO
+            </span>
+
+
+            <a
+                class="nav-item"
+                href="../../relatorios/index.html"
+            >
+
+                <span class="nav-icon">
+                    ▤
+                </span>
+
+                <span>
+                    Relatórios
+                </span>
+
+            </a>
+
+
+            <a
+                class="nav-item"
+                href="../../solicitacoes/index.html"
+            >
+
+                <span class="nav-icon">
+                    □
+                </span>
+
+                <span>
+                    Solicitações
+                </span>
+
+            </a>
+
+
+            <a
+                class="nav-item"
+                href="../../perfil/index.html"
+            >
+
+                <span class="nav-icon">
+                    ◉
+                </span>
+
+                <span>
+                    Perfil
+                </span>
+
+            </a>
+
+
+            <span class="nav-title">
+                AJUDA
+            </span>
+
+
+            <a
+                class="nav-item active"
+                href="../index.html"
+            >
+
+                <span class="nav-icon">
+                    ?
+                </span>
+
+                <span>
+                    Suporte
+                </span>
+
+            </a>
+
+        </nav>
+
+
+        <div class="system-status">
+
+            <span class="status-dot"></span>
+
+            <div>
+
+                <strong>
+                    Sistema online
+                </strong>
+
+                <small>
+                    Todas as funções funcionando
+                </small>
+
+            </div>
+
+        </div>
+
+    </aside>
+
+
+    <!-- =========================================
+         CONTEÚDO
+    ========================================== -->
+
+    <main class="main-content">
+
+
+        <!-- =====================================
+             HERO
+        ====================================== -->
+
+        <section class="hero">
+
+            <div class="hero-content">
+
+                <span class="eyebrow">
+                    SUPORTE
+                </span>
+
+                <h1>
+                    Meus chamados
+                </h1>
+
+                <p>
+                    Acompanhe suas solicitações de suporte
+                    e consulte o andamento de cada atendimento.
+                </p>
+
+            </div>
+
+
+            <button
+                class="primary-button"
+                id="novoChamado"
+                type="button"
+            >
+
+                ＋ Novo chamado
+
+            </button>
+
+        </section>
+
+
+        <!-- =====================================
+             RESUMO
+        ====================================== -->
+
+        <section class="summary-grid">
+
+
+            <div class="summary-card">
+
+                <div class="summary-icon blue">
+                    ▤
+                </div>
+
+                <div>
+
+                    <span>
+                        Total
+                    </span>
+
+                    <strong id="totalChamados">
+                        0
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <div class="summary-card">
+
+                <div class="summary-icon orange">
+                    ◷
+                </div>
+
+                <div>
+
+                    <span>
+                        Abertos
+                    </span>
+
+                    <strong id="chamadosAbertos">
+                        0
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <div class="summary-card">
+
+                <div class="summary-icon green">
+                    ✓
+                </div>
+
+                <div>
+
+                    <span>
+                        Resolvidos
+                    </span>
+
+                    <strong id="chamadosResolvidos">
+                        0
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+        </section>
+
+
+        <!-- =====================================
+             FILTROS
+        ====================================== -->
+
+        <section class="panel">
+
+            <div class="filters">
+
+                <div class="search-field">
+
+                    <span>
+                        ⌕
+                    </span>
+
+                    <input
+                        type="search"
+                        id="buscaChamado"
+                        placeholder="Buscar chamado..."
+                    >
+
+                </div>
+
+
+                <select id="filtroStatus">
+
+                    <option value="">
+                        Todos os status
+                    </option>
+
+                    <option value="Aberto">
+                        Aberto
+                    </option>
+
+                    <option value="Em atendimento">
+                        Em atendimento
+                    </option>
+
+                    <option value="Resolvido">
+                        Resolvido
+                    </option>
+
+                    <option value="Fechado">
+                        Fechado
+                    </option>
+
+                </select>
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================
+             LISTA
+        ====================================== -->
+
+        <section class="panel">
+
+            <div class="panel-header">
+
+                <div>
+
+                    <h2>
+                        Solicitações
+                    </h2>
+
+                    <p>
+                        Histórico dos seus chamados de suporte.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div
+                class="tickets-list"
+                id="ticketsList"
+            ></div>
+
+
+            <div
+                class="empty-state"
+                id="emptyState"
+            >
+
+                <div class="empty-icon">
+                    ?
+                </div>
+
+                <strong>
+                    Nenhum chamado encontrado
+                </strong>
+
+                <span>
+                    Quando você abrir um chamado,
+                    ele aparecerá aqui.
+                </span>
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================
+             BOTÃO VOLTAR
+        ====================================== -->
+
+        <div class="bottom-back">
+
+            <a
+                href="../index.html"
+                class="back-button"
+            >
+
+                ← Voltar para Suporte
+
+            </a>
+
+        </div>
+
+
+        <!-- =====================================
+             MODAL DETALHES
+        ====================================== -->
+
+        <div
+            class="modal-overlay"
+            id="modalDetalhes"
+        >
+
+            <div class="modal">
+
+
+                <div class="modal-header">
+
+                    <div>
+
+                        <span class="eyebrow">
+                            CHAMADO
+                        </span>
+
+                        <h2 id="detalheAssunto">
+                            -
+                        </h2>
+
+                    </div>
+
+
+                    <button
+                        class="modal-close"
+                        id="fecharDetalhes"
+                        type="button"
+                    >
+                        ×
+                    </button>
+
+                </div>
+
+
+                <div class="ticket-details">
+
+
+                    <div class="detail-grid">
+
+                        <div class="detail-box">
+
+                            <span>
+                                Número
+                            </span>
+
+                            <strong id="detalheNumero">
+                                -
+                            </strong>
+
+                        </div>
+
+
+                        <div class="detail-box">
+
+                            <span>
+                                Status
+                            </span>
+
+                            <strong id="detalheStatus">
+                                -
+                            </strong>
+
+                        </div>
+
+
+                        <div class="detail-box">
+
+                            <span>
+                                Categoria
+                            </span>
+
+                            <strong id="detalheCategoria">
+                                -
+                            </strong>
+
+                        </div>
+
+
+                        <div class="detail-box">
+
+                            <span>
+                                Data
+                            </span>
+
+                            <strong id="detalheData">
+                                -
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="detail-section">
+
+                        <h4>
+                            Descrição
+                        </h4>
+
+                        <div class="detail-message">
+
+                            <p id="detalheMensagem">
+                                -
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="detail-section">
+
+                        <h4>
+                            Resposta do suporte
+                        </h4>
+
+                        <div
+                            class="support-response"
+                            id="respostaSuporte"
+                        >
+
+                            <p>
+                                Seu chamado foi recebido.
+                                Nossa equipe analisará a solicitação
+                                e responderá assim que possível.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                </div>
+
+
+                <div class="modal-footer">
+
+                    <button
+                        class="secondary-button"
+                        id="fecharDetalhesBtn"
+                        type="button"
+                    >
+                        Fechar
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+    </main>
+
+
+    <script src="../../auth.js"></script>
+
+    <script src="script.js"></script>
+
+</body>
+
+</html>

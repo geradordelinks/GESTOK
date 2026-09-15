@@ -296,9 +296,8 @@ quickActions.forEach(function (button) {
                 pagina === "Solicitacoes"
             ) {
 
-                console.log(
-                    "Página de solicitações ainda não criada."
-                );
+                window.location.href =
+                    "../solicitacoes/index.html";
 
                 return;
 

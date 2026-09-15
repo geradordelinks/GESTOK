@@ -512,361 +512,6 @@ select:disabled {
         font-size: 25px;
     }
 }
-/* =========================================
-   GESTOK - MENU LATERAL
-========================================= */
-
-.sidebar {
-    position: fixed !important;
-    top: 0;
-    left: -290px;
-    width: 290px;
-    height: 100vh;
-
-    background: #ffffff;
-
-    z-index: 9999;
-
-    border-right: 1px solid #e7ebf0;
-
-    box-shadow: 8px 0 30px rgba(20, 30, 50, 0.08);
-
-    transition: left 0.25s ease;
-
-    display: flex;
-    flex-direction: column;
-
-    padding: 22px 17px;
-
-    box-sizing: border-box;
-}
-
-.sidebar.active {
-    left: 0 !important;
-}
-
-
-/* =========================================
-   TOPO DA BARRA
-========================================= */
-
-.sidebar-top {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-
-    margin-bottom: 30px;
-
-    padding: 0 5px;
-}
-
-
-/* =========================================
-   LOGO
-========================================= */
-
-.brand {
-    display: flex;
-    align-items: center;
-
-    gap: 10px;
-
-    text-decoration: none;
-
-    color: #171a1f;
-}
-
-.brand-icon {
-    width: 37px;
-    height: 37px;
-
-    border-radius: 10px;
-
-    background: linear-gradient(
-        135deg,
-        #428ce9,
-        #2868ce
-    );
-
-    color: #ffffff;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    font-weight: 800;
-    font-size: 16px;
-}
-
-.brand div:last-child {
-    display: flex;
-    flex-direction: column;
-}
-
-.brand strong {
-    font-size: 16px;
-}
-
-.brand span {
-    color: #a4acb8;
-    font-size: 9px;
-    margin-top: 2px;
-}
-
-
-/* =========================================
-   BOTÃO X
-========================================= */
-
-.close-sidebar {
-    width: 30px;
-    height: 30px;
-
-    border: 0;
-
-    background: #f4f6f8;
-
-    border-radius: 8px;
-
-    color: #777f89;
-
-    font-size: 21px;
-
-    cursor: pointer;
-}
-
-
-/* =========================================
-   NAVEGAÇÃO
-========================================= */
-
-.navigation {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.nav-title {
-    color: #a4acb6;
-
-    font-size: 9px;
-
-    font-weight: 700;
-
-    letter-spacing: 0.8px;
-
-    margin: 8px 10px 5px;
-}
-
-.nav-item {
-    width: 100%;
-
-    padding: 11px 12px;
-
-    border: 0;
-
-    border-radius: 9px;
-
-    background: transparent;
-
-    color: #66717e;
-
-    cursor: pointer;
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 11px;
-
-    text-align: left;
-
-    font-family: inherit;
-
-    font-size: 12px;
-
-    text-decoration: none;
-
-    box-sizing: border-box;
-
-    transition: 0.15s;
-}
-
-.nav-item:hover {
-    background: #ffffff;
-    color: #2563eb;
-}
-
-.nav-item.active {
-    background: #fdecec;
-    color: #a31616;
-    font-weight: 600;
-}
-
-.nav-icon {
-    width: 20px;
-
-    flex-shrink: 0;
-
-    text-align: center;
-
-    font-size: 17px;
-}
-
-
-/* =========================================
-   CRIAR PRODUTO
-========================================= */
-
-.nav-create-product {
-    margin-top: 5px;
-
-    padding: 10px 12px;
-
-    color: #2563eb;
-
-    background: linear-gradient(
-        135deg,
-        #f8fbff,
-        #f1f7ff
-    );
-
-    border: 1px solid #dbeafe;
-
-    box-shadow:
-        0 2px 6px rgba(
-            37,
-            99,
-            235,
-            0.06
-        );
-}
-
-.nav-create-product .nav-icon {
-    width: 31px;
-    height: 31px;
-
-    border-radius: 9px;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    background: linear-gradient(
-        135deg,
-        #3b82f6,
-        #2563eb
-    );
-
-    color: #ffffff;
-
-    font-size: 20px;
-}
-
-.nav-create-product strong {
-    display: block;
-
-    font-size: 12px;
-
-    color: #1d4ed8;
-}
-
-.nav-create-product small {
-    display: block;
-
-    margin-top: 3px;
-
-    font-size: 9px;
-
-    color: #94a3b8;
-}
-
-
-/* =========================================
-   PARTE INFERIOR
-========================================= */
-
-.sidebar-bottom {
-    margin-top: auto;
-
-    padding: 12px 4px 4px;
-}
-
-.system-status {
-    padding: 12px;
-
-    border-radius: 11px;
-
-    background: #f6f8fa;
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 9px;
-}
-
-.system-status .status-dot {
-    width: 8px;
-    height: 8px;
-
-    flex-shrink: 0;
-
-    border-radius: 50%;
-
-    background: #21ad4b;
-
-    box-shadow:
-        0 0 0 3px #ddf7e8;
-}
-
-.system-status div {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.system-status strong {
-    font-size: 10px;
-}
-
-.system-status small {
-    color: #a4acb8;
-    font-size: 8px;
-}
-
-
-/* =========================================
-   FUNDO ESCURO
-========================================= */
-
-.overlay {
-    position: fixed;
-
-    inset: 0;
-
-    background: rgba(
-        15,
-        23,
-        35,
-        0.32
-    );
-
-    z-index: 9998;
-
-    opacity: 0;
-
-    pointer-events: none;
-
-    transition:
-        opacity 0.25s ease;
-}
-
-.overlay.active {
-    opacity: 1;
-
-    pointer-events: auto;
-}
 
 
 /* =========================================
@@ -905,43 +550,37 @@ select:disabled {
 }
 
 .menu-button {
-    width: 38px;
-    height: 38px;
+    width: 40px;
+    height: 40px;
 
-    border: 0;
+    border: 1px solid #e6eaf0;
 
-    background: transparent;
+    border-radius: 10px;
 
-    cursor: pointer;
+    background: #ffffff;
 
     display: flex;
-
     flex-direction: column;
-
+    align-items: center;
     justify-content: center;
 
-    gap: 5px;
+    gap: 4px;
 
-    padding: 4px;
+    cursor: pointer;
 }
 
 .menu-button span {
-    display: block;
+    width: 17px;
+    height: 2px;
 
-    width: 27px;
-    height: 3px;
+    border-radius: 2px;
 
-    background: #747d88;
-
-    border-radius: 10px;
+    background: #344054;
 }
 
 .page-name {
-    font-size: 13px;
-
-    font-weight: 600;
-
-    color: #374151;
+    font-size: 14px;
+    font-weight: 700;
 }
 /* =========================================
    MOBILE

@@ -141,250 +141,6 @@ body {
     font-size: 15px;
     margin-left: 3px;
 }
-
-
-/* =========================================
-   SIDEBAR
-========================================= */
-
-.sidebar {
-    position: fixed !important;
-    top: 0;
-    left: -290px;
-    width: 290px;
-    height: 100vh;
-    background: #fff;
-    z-index: 9999;
-    border-right: 1px solid #e7ebf0;
-    box-shadow: 8px 0 30px rgba(20, 30, 50, .08);
-    transition: left .25s ease;
-    display: flex;
-    flex-direction: column;
-    padding: 22px 17px;
-}
-
-.sidebar.active {
-    left: 0 !important;
-}
-
-
-/* =========================================
-   TOPO DA SIDEBAR
-========================================= */
-
-.sidebar-top {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 30px;
-    padding: 0 5px;
-}
-
-.brand {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    text-decoration: none;
-    color: #171a1f;
-}
-
-.brand-icon {
-    width: 37px;
-    height: 37px;
-    border-radius: 10px;
-    background: linear-gradient(135deg, #428ce9, #2868ce);
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 800;
-}
-
-.brand div:last-child {
-    display: flex;
-    flex-direction: column;
-}
-
-.brand strong {
-    font-size: 16px;
-}
-
-.brand span {
-    color: #a4acb8;
-    font-size: 9px;
-    margin-top: 2px;
-}
-
-
-/* =========================================
-   BOTÃO FECHAR SIDEBAR
-========================================= */
-
-.close-sidebar {
-    width: 30px;
-    height: 30px;
-    border: 0;
-    background: #f4f6f8;
-    border-radius: 8px;
-    color: #777f89;
-    font-size: 21px;
-    cursor: pointer;
-}
-
-
-/* =========================================
-   NAVEGAÇÃO
-========================================= */
-
-.navigation {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.nav-title {
-    color: #a4acb6;
-    font-size: 9px;
-    font-weight: 700;
-    letter-spacing: .8px;
-    margin: 8px 10px 5px;
-}
-
-.nav-item {
-    width: 100%;
-    min-height: 40px;
-    padding: 11px 12px;
-    border: 0;
-    border-radius: 9px;
-    background: transparent;
-    color: #66717e;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 11px;
-    text-align: left;
-    font-family: inherit;
-    font-size: 12px;
-    text-decoration: none;
-    box-sizing: border-box;
-    transition: .15s;
-}
-
-.nav-item:hover {
-    background: #f4f7fb;
-    color: #2563eb;
-}
-
-.nav-item.active {
-    background: #edf4ff;
-    color: #2563eb;
-    font-weight: 600;
-}
-
-.nav-icon {
-    width: 20px;
-    flex-shrink: 0;
-    text-align: center;
-    font-size: 17px;
-}
-
-
-/* =========================================
-   CRIAR PRODUTO
-========================================= */
-
-.nav-create-product {
-    margin-top: 0;
-    padding: 11px 12px;
-    border: 0;
-    background: transparent;
-    color: #66717e;
-    box-shadow: none;
-}
-
-.nav-create-product .nav-icon {
-    width: 20px;
-    height: 20px;
-    background: transparent;
-    color: inherit;
-    font-size: 17px;
-}
-
-.nav-create-product strong {
-    display: inline;
-    color: inherit;
-    font-size: 12px;
-    font-weight: 400;
-}
-
-.nav-create-product small {
-    display: none;
-}
-
-
-/* =========================================
-   PARTE INFERIOR SIDEBAR
-========================================= */
-
-.sidebar-bottom {
-    margin-top: auto;
-    padding: 12px 4px 4px;
-}
-
-.system-status {
-    padding: 12px;
-    border-radius: 11px;
-    background: #f6f8fa;
-    display: flex;
-    align-items: center;
-    gap: 9px;
-}
-
-.status-dot {
-    width: 8px;
-    height: 8px;
-    flex-shrink: 0;
-    border-radius: 50%;
-    background: #21ad4b;
-    box-shadow: 0 0 0 3px #ddf7e8;
-}
-
-.system-status div {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.system-status strong {
-    font-size: 10px;
-}
-
-.system-status small {
-    color: #a4acb8;
-    font-size: 8px;
-}
-
-
-/* =========================================
-   OVERLAY
-========================================= */
-
-.overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(15, 23, 35, .32);
-    z-index: 9998;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity .25s;
-}
-
-.overlay.active {
-    opacity: 1;
-    pointer-events: auto;
-}
-
-
 /* =========================================
    PÁGINA
 ========================================= */
@@ -679,23 +435,29 @@ body {
 /* =========================================
    VOLTAR AO DASHBOARD
 ========================================= */
+.main-content {
+    width: min(1400px, 92%);
+
+    margin: 0 auto;
+
+    padding: 25px 0 50px;
+}
 
 .back-dashboard {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
+    display: inline-block;
 
     margin-bottom: 22px;
 
-    color: #2563eb;
-    font-size: 11px;
-    font-weight: 600;
+    color: #667085;
 
     text-decoration: none;
+
+    font-size: 11px;
+    font-weight: 600;
 }
 
 .back-dashboard:hover {
-    text-decoration: underline;
+    color: #2563eb;
 }
 
 
@@ -848,4 +610,86 @@ body {
 
     color: #7b8794;
 
+}
+/* =========================================
+   CRIAR PRODUTO
+========================================= */
+
+/* =========================================
+   CRIAR PRODUTO - DESTAQUE
+========================================= */
+
+.nav-create-product {
+    margin-top: 8px;
+
+    min-height: 48px;
+
+    padding: 10px 12px;
+
+    border-radius: 11px;
+
+    background: #2563eb;
+
+    color: #ffffff;
+
+    box-shadow: 0 5px 14px rgba(37, 99, 235, .20);
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 11px;
+
+    text-decoration: none;
+
+    transition: .18s ease;
+}
+
+.nav-create-product:hover {
+    background: #1d4ed8;
+
+    color: #ffffff;
+
+    transform: translateY(-1px);
+
+    box-shadow: 0 7px 18px rgba(37, 99, 235, .25);
+}
+
+.nav-create-product .nav-icon {
+    width: 28px;
+    height: 28px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 8px;
+
+    background: rgba(255, 255, 255, .16);
+
+    color: #ffffff;
+
+    font-size: 18px;
+
+    flex-shrink: 0;
+}
+
+.nav-create-product strong {
+    display: block;
+
+    color: #ffffff;
+
+    font-size: 12px;
+
+    font-weight: 700;
+}
+
+.nav-create-product small {
+    display: block;
+
+    color: rgba(255, 255, 255, .75);
+
+    font-size: 9px;
+
+    margin-top: 2px;
 }

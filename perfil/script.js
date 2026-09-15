@@ -19,8 +19,11 @@ const menuButton =
 const closeSidebar =
     document.getElementById("closeSidebar");
 
-const codigoLoja =
-    document.getElementById("codigoLoja");
+
+/* =========================================
+   MENU
+========================================= */
+
 function abrirMenu() {
 
     if (sidebar) {
@@ -203,7 +206,42 @@ const savedMessage =
 
 
 /* =========================================
-   CARREGAR CONTA DO USUÁRIO
+   ELEMENTOS DA ASSINATURA
+========================================= */
+
+const subscriptionStatus =
+    document.getElementById(
+        "subscriptionStatus"
+    );
+
+const startDate =
+    document.getElementById(
+        "startDate"
+    );
+
+const endDate =
+    document.getElementById(
+        "endDate"
+    );
+
+const daysRemaining =
+    document.getElementById(
+        "daysRemaining"
+    );
+
+const subscribeButton =
+    document.getElementById(
+        "subscribeButton"
+    );
+
+const planBadge =
+    document.getElementById(
+        "planBadge"
+    );
+
+
+/* =========================================
+   OBTER CONTA
 ========================================= */
 
 function obterContaGestokPerfil() {
@@ -254,7 +292,96 @@ function obterContaGestokPerfil() {
 
 
 /* =========================================
-   ATUALIZAR NOME NO PERFIL
+   FORMATAR DATA
+========================================= */
+
+function formatarDataPerfil(
+    data
+) {
+
+    if (!data) {
+
+        return "—";
+
+    }
+
+
+    const dataObj =
+        new Date(data);
+
+
+    if (
+        Number.isNaN(
+            dataObj.getTime()
+        )
+    ) {
+
+        return "—";
+
+    }
+
+
+    return dataObj.toLocaleDateString(
+        "pt-BR"
+    );
+
+}
+
+
+/* =========================================
+   DIAS RESTANTES
+========================================= */
+
+function calcularDiasRestantesPerfil(
+    vencimento
+) {
+
+    if (!vencimento) {
+
+        return 0;
+
+    }
+
+
+    const dataFinal =
+        new Date(
+            vencimento
+        );
+
+
+    if (
+        Number.isNaN(
+            dataFinal.getTime()
+        )
+    ) {
+
+        return 0;
+
+    }
+
+
+    const agora =
+        new Date();
+
+
+    const diferenca =
+        dataFinal.getTime() -
+        agora.getTime();
+
+
+    return Math.max(
+        0,
+        Math.ceil(
+            diferenca /
+            86400000
+        )
+    );
+
+}
+
+
+/* =========================================
+   ATUALIZAR DADOS DO PERFIL
 ========================================= */
 
 function atualizarDadosPerfil() {
@@ -279,22 +406,33 @@ function atualizarDadosPerfil() {
     ===================================== */
 
     const codigoLoja =
-        document.getElementById("codigoLoja");
+        document.getElementById(
+            "codigoLoja"
+        );
 
 
     if (codigoLoja) {
 
         codigoLoja.textContent =
-            conta.codigoLoja || "----";
+            conta.codigoLoja ||
+            "----";
 
     }
 
+
+    /* =====================================
+       NOME
+    ===================================== */
 
     const nome =
         String(
             conta.nome || ""
         ).trim();
 
+
+    /* =====================================
+       E-MAIL
+    ===================================== */
 
     const email =
         String(
@@ -367,6 +505,354 @@ function atualizarDadosPerfil() {
 
 
 /* =========================================
+   ATUALIZAR ASSINATURA
+========================================= */
+
+function atualizarAssinatura() {
+
+    const conta =
+        obterContaGestokPerfil();
+
+
+    if (!conta) {
+
+        return;
+
+    }
+
+
+    const assinatura =
+        conta.assinatura;
+
+
+    /* =====================================
+       SEM ASSINATURA
+    ===================================== */
+
+    if (!assinatura) {
+
+        if (subscriptionStatus) {
+
+            subscriptionStatus.textContent =
+                "Inativo";
+
+            subscriptionStatus.classList.remove(
+                "active"
+            );
+
+        }
+
+
+        if (startDate) {
+
+            startDate.textContent =
+                "—";
+
+        }
+
+
+        if (endDate) {
+
+            endDate.textContent =
+                "—";
+
+        }
+
+
+        if (daysRemaining) {
+
+            daysRemaining.textContent =
+                "—";
+
+        }
+
+
+        if (subscribeButton) {
+
+            subscribeButton.textContent =
+                "Assinar por R$ 30,00";
+
+        }
+
+
+        if (planBadge) {
+
+            planBadge.textContent =
+                "Plano Mensal";
+
+        }
+
+
+        return;
+
+    }
+
+
+    /* =====================================
+       DADOS DA ASSINATURA
+    ===================================== */
+
+    const plano =
+        assinatura.plano ||
+        "Gestok";
+
+
+    const valor =
+        Number(
+            assinatura.valor || 30
+        );
+
+
+    const vencimento =
+        assinatura.vencimento;
+
+
+    const inicio =
+        assinatura.inicio;
+
+
+    const status =
+        assinatura.status;
+
+
+    const pagamento =
+        assinatura.pagamento;
+
+
+    const dias =
+        calcularDiasRestantesPerfil(
+            vencimento
+        );
+
+
+    /* =====================================
+       PLANO NO TOPO
+    ===================================== */
+
+    if (planBadge) {
+
+        planBadge.textContent =
+            plano;
+
+    }
+
+
+    /* =====================================
+       PREÇO
+    ===================================== */
+
+    const priceStrong =
+        document.querySelector(
+            ".subscription-card .price strong"
+        );
+
+
+    if (priceStrong) {
+
+        priceStrong.textContent =
+            "R$ " +
+            valor
+                .toFixed(2)
+                .replace(".", ",");
+
+    }
+
+
+    /* =====================================
+       PAGAMENTO APROVADO + ATIVO
+    ===================================== */
+
+    if (
+        status === "ativa" &&
+        pagamento === "aprovado" &&
+        dias > 0
+    ) {
+
+        if (subscriptionStatus) {
+
+            subscriptionStatus.textContent =
+                "Ativo";
+
+            subscriptionStatus.classList.add(
+                "active"
+            );
+
+        }
+
+
+        if (startDate) {
+
+            startDate.textContent =
+                formatarDataPerfil(
+                    inicio
+                );
+
+        }
+
+
+        if (endDate) {
+
+            endDate.textContent =
+                formatarDataPerfil(
+                    vencimento
+                );
+
+        }
+
+
+        if (daysRemaining) {
+
+            daysRemaining.textContent =
+                dias +
+                (
+                    dias === 1
+                        ? " dia"
+                        : " dias"
+                );
+
+        }
+
+
+        if (subscribeButton) {
+
+            subscribeButton.textContent =
+                "Renovar por R$ " +
+                valor
+                    .toFixed(2)
+                    .replace(".", ",");
+
+        }
+
+
+        return;
+
+    }
+
+
+    /* =====================================
+       PAGAMENTO PENDENTE
+    ===================================== */
+
+    if (
+        pagamento !== "aprovado"
+    ) {
+
+        if (subscriptionStatus) {
+
+            subscriptionStatus.textContent =
+                "Pagamento pendente";
+
+            subscriptionStatus.classList.remove(
+                "active"
+            );
+
+        }
+
+
+        if (startDate) {
+
+            startDate.textContent =
+                "—";
+
+        }
+
+
+        if (endDate) {
+
+            endDate.textContent =
+                "—";
+
+        }
+
+
+        if (daysRemaining) {
+
+            daysRemaining.textContent =
+                "—";
+
+        }
+
+
+        if (subscribeButton) {
+
+            subscribeButton.textContent =
+                "Assinar por R$ " +
+                valor
+                    .toFixed(2)
+                    .replace(".", ",");
+
+        }
+
+
+        return;
+
+    }
+
+
+    /* =====================================
+       ASSINATURA EXPIRADA
+    ===================================== */
+
+    if (
+        dias <= 0
+    ) {
+
+        if (subscriptionStatus) {
+
+            subscriptionStatus.textContent =
+                "Expirada";
+
+            subscriptionStatus.classList.remove(
+                "active"
+            );
+
+        }
+
+
+        if (startDate) {
+
+            startDate.textContent =
+                formatarDataPerfil(
+                    inicio
+                );
+
+        }
+
+
+        if (endDate) {
+
+            endDate.textContent =
+                formatarDataPerfil(
+                    vencimento
+                );
+
+        }
+
+
+        if (daysRemaining) {
+
+            daysRemaining.textContent =
+                "0 dias";
+
+        }
+
+
+        if (subscribeButton) {
+
+            subscribeButton.textContent =
+                "Renovar por R$ " +
+                valor
+                    .toFixed(2)
+                    .replace(".", ",");
+
+        }
+
+    }
+
+}
+
+
+/* =========================================
    SALVAR ALTERAÇÕES DO PERFIL
 ========================================= */
 
@@ -414,16 +900,13 @@ if (saveProfile) {
             }
 
 
-            /* Atualiza os dados da conta */
-
             conta.nome =
                 nome;
+
 
             conta.email =
                 email.toLowerCase();
 
-
-            /* Salva a conta atualizada */
 
             localStorage.setItem(
                 "gestok_conta",
@@ -431,8 +914,7 @@ if (saveProfile) {
             );
 
 
-            /* Atualiza também as chaves antigas
-               para manter compatibilidade */
+            /* Compatibilidade */
 
             localStorage.setItem(
                 "gestok_nome",
@@ -446,7 +928,7 @@ if (saveProfile) {
             );
 
 
-            /* Atualiza a tela */
+            /* Atualizar tela */
 
             if (headerName) {
 
@@ -556,8 +1038,6 @@ if (changePassword) {
             }
 
 
-            /* Atualiza a senha na conta */
-
             conta.senha =
                 password;
 
@@ -568,7 +1048,7 @@ if (changePassword) {
             );
 
 
-            /* Mantém compatibilidade */
+            /* Compatibilidade */
 
             localStorage.setItem(
                 "gestok_senha",
@@ -595,198 +1075,7 @@ if (changePassword) {
 
 
 /* =========================================
-   ASSINATURA
-========================================= */
-
-const subscriptionStatus =
-    document.getElementById(
-        "subscriptionStatus"
-    );
-
-const startDate =
-    document.getElementById(
-        "startDate"
-    );
-
-const endDate =
-    document.getElementById(
-        "endDate"
-    );
-
-const daysRemaining =
-    document.getElementById(
-        "daysRemaining"
-    );
-
-const subscribeButton =
-    document.getElementById(
-        "subscribeButton"
-    );
-
-
-function formatarData(data) {
-
-    return data.toLocaleDateString(
-        "pt-BR"
-    );
-
-}
-
-
-function atualizarAssinatura() {
-
-    const assinatura =
-        localStorage.getItem(
-            "gestok_assinatura"
-        );
-
-
-    if (!assinatura) {
-
-        if (subscriptionStatus) {
-
-            subscriptionStatus.textContent =
-                "Inativo";
-
-            subscriptionStatus.classList.remove(
-                "active"
-            );
-
-        }
-
-
-        if (startDate) {
-            startDate.textContent = "—";
-        }
-
-
-        if (endDate) {
-            endDate.textContent = "—";
-        }
-
-
-        if (daysRemaining) {
-            daysRemaining.textContent = "—";
-        }
-
-
-        if (subscribeButton) {
-
-            subscribeButton.textContent =
-                "Assinar por R$ 30,00";
-
-        }
-
-
-        return;
-
-    }
-
-
-    const dataFinal =
-        new Date(assinatura);
-
-
-    const agora =
-        new Date();
-
-
-    const diferenca =
-        dataFinal - agora;
-
-
-    const dias =
-        Math.ceil(
-            diferenca /
-            (1000 * 60 * 60 * 24)
-        );
-
-
-    if (dias > 0) {
-
-        if (subscriptionStatus) {
-
-            subscriptionStatus.textContent =
-                "Ativo";
-
-            subscriptionStatus.classList.add(
-                "active"
-            );
-
-        }
-
-
-        if (startDate) {
-
-            startDate.textContent =
-                localStorage.getItem(
-                    "gestok_inicio_assinatura"
-                ) || "—";
-
-        }
-
-
-        if (endDate) {
-
-            endDate.textContent =
-                formatarData(
-                    dataFinal
-                );
-
-        }
-
-
-        if (daysRemaining) {
-
-            daysRemaining.textContent =
-                dias + " dias";
-
-        }
-
-
-        if (subscribeButton) {
-
-            subscribeButton.textContent =
-                "Renovar por R$ 30,00";
-
-        }
-
-    } else {
-
-        if (subscriptionStatus) {
-
-            subscriptionStatus.textContent =
-                "Expirada";
-
-            subscriptionStatus.classList.remove(
-                "active"
-            );
-
-        }
-
-
-        if (daysRemaining) {
-
-            daysRemaining.textContent =
-                "0 dias";
-
-        }
-
-
-        if (subscribeButton) {
-
-            subscribeButton.textContent =
-                "Assinar novamente - R$ 30,00";
-
-        }
-
-    }
-
-}
-
-
-/* =========================================
-   ASSINAR
+   BOTÃO DE ASSINATURA
 ========================================= */
 
 if (subscribeButton) {
@@ -795,41 +1084,8 @@ if (subscribeButton) {
         "click",
         function () {
 
-            const agora =
-                new Date();
-
-
-            const vencimento =
-                new Date(
-                    agora
-                );
-
-
-            vencimento.setDate(
-                vencimento.getDate() + 30
-            );
-
-
-            localStorage.setItem(
-                "gestok_inicio_assinatura",
-                formatarData(
-                    agora
-                )
-            );
-
-
-            localStorage.setItem(
-                "gestok_assinatura",
-                vencimento.toISOString()
-            );
-
-
-            atualizarAssinatura();
-
-
-            alert(
-                "Assinatura ativada por 30 dias."
-            );
+            window.location.href =
+                "../pagamento/index.html";
 
         }
     );
@@ -867,6 +1123,8 @@ window.addEventListener(
         ) {
 
             atualizarDadosPerfil();
+
+            atualizarAssinatura();
 
         }
 

@@ -1,280 +1,33 @@
 <!DOCTYPE html>
-
 <html lang="pt-BR">
 
 <head>
 
-<meta charset="UTF-8">
+    <meta charset="UTF-8">
 
-<meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
->
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
-<title>Gestok | Dashboard</title>
+    <title>Gestok | Dashboard</title>
 
-<link
-    rel="stylesheet"
-    href="style.css"
->
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+        <link
+        rel="stylesheet"
+        href="../componentes/sidebar.css"
+    >
 
 </head>
 
 <body>
-
-<!-- =========================================
-     OVERLAY
-========================================== -->
-
-<div
-    class="overlay"
-    id="overlay">
-</div>
-
-
-
-<!-- =========================================
-     SIDEBAR
-========================================== -->
-
-<aside
-    class="sidebar"
-    id="sidebar">
-
-
-    <div class="sidebar-top">
-
-
-        <div class="brand">
-
-            <div class="brand-icon">
-                G
-            </div>
-
-
-            <div>
-
-                <strong>
-                    Gestok
-                </strong>
-
-                <span>
-                    Gestão de estoque
-                </span>
-
-            </div>
-
-        </div>
-
-
-        <button
-            class="close-sidebar"
-            id="closeSidebar"
-            aria-label="Fechar menu">
-
-            ×
-
-        </button>
-
-
-    </div>
-
-
-
-    <nav class="navigation">
-
-
-        <span class="nav-title">
-            PRINCIPAL
-        </span>
-
-
-        <button
-            class="nav-item active">
-
-            <span class="nav-icon">
-                ⌂
-            </span>
-
-            <span>
-                Dashboard
-            </span>
-
-        </button>
-
-
-
-        <button
-            class="nav-item"
-            onclick="window.location.href='../produtos/consulta/index.html'">
-            
-            <span class="nav-icon">
-                ▣
-            </span>
-
-            <span>
-                Produtos
-            </span>
-
-        </button>
-
-
-
-        <a
-            href="../produtos/index.html#novo"
-            class="nav-item nav-create-product">
-
-            <span class="nav-icon">
-                ＋
-            </span>
-
-            <div>
-
-                <strong>
-                    Criar produto
-                </strong>
-
-                <small>
-                    Novo item no estoque
-                </small>
-
-            </div>
-
-        </a>
-
-
-
-        <span class="nav-title">
-            ESTOQUE
-        </span>
-
-
-
-        <button
-            class="nav-item"
-            onclick="window.location.href='../entrada/index.html'">
-
-            <span class="nav-icon">
-                ↓
-            </span>
-
-            <span>
-                Entrada
-            </span>
-
-        </button>
-
-
-
-        <button
-            class="nav-item"
-            onclick="window.location.href='../saida/index.html'">
-
-            <span class="nav-icon">
-                ↑
-            </span>
-
-            <span>
-                Saída
-            </span>
-
-        </button>
-
-
-
-        <button
-            class="nav-item"
-            onclick="window.location.href='../movimentacoes/index.html'">
-
-            <span class="nav-icon">
-                ↔
-            </span>
-
-            <span>
-                Movimentações
-            </span>
-
-        </button>
-
-
-
-        <span class="nav-title">
-            GESTÃO
-        </span>
-
-
-
-        <button
-            class="nav-item">
-
-            <span class="nav-icon">
-                □
-            </span>
-
-            <span>
-                Solicitações
-            </span>
-
-        </button>
-
-
-
-        <button
-            class="nav-item">
-
-            <span class="nav-icon">
-                ♙
-            </span>
-
-            <span>
-                Operadores
-            </span>
-
-        </button>
-
-
-        <a href="../perfil/index.html" class="nav-item">
-            <span class="nav-icon">◉</span>
-            <span>Perfil</span>
-        </a>
-
-    </nav>
-
-
-
-    <div class="sidebar-bottom">
-
-
-        <div class="system-status">
-
-            <span class="status-dot"></span>
-
-
-            <div>
-
-                <strong>
-                    Sistema online
-                </strong>
-
-                <small>
-                    Todos os serviços funcionando
-                </small>
-
-            </div>
-
-        </div>
-
-
-    </div>
-
-
-</aside>
-
-
-
+    <div id="gestok-sidebar-container"></div>
 <!-- =========================================
      APLICAÇÃO
-========================================== -->
+========================================= -->
 
 <div class="app">
 
@@ -292,7 +45,9 @@
             <button
                 class="menu-button"
                 id="menuButton"
-                aria-label="Abrir menu">
+                type="button"
+                aria-label="Abrir menu"
+            >
 
                 <span></span>
                 <span></span>
@@ -313,17 +68,21 @@
         <div class="header-right">
 
 
+            <!-- NOTIFICAÇÕES -->
+
             <button
                 class="notification-button"
                 id="notificationButton"
-                aria-label="Notificações">
-
+                type="button"
+                aria-label="Notificações"
+            >
 
                 <svg
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
-                    stroke-width="1.8">
+                    stroke-width="1.8"
+                >
 
                     <path
                         d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"
@@ -338,34 +97,93 @@
 
                 <span class="notification-dot"></span>
 
-
             </button>
 
-            <div class="notifications-panel" id="notificationsPanel" aria-hidden="true">
+
+
+            <!-- PAINEL DE NOTIFICAÇÕES -->
+
+            <div
+                class="notifications-panel"
+                id="notificationsPanel"
+                aria-hidden="true"
+            >
+
                 <div class="notifications-header">
-                    <div><span>NOTIFICAÇÕES</span><strong>Avisos do sistema</strong></div>
-                    <button id="marcarAvisosLidos" type="button">Marcar como lidos</button>
+
+                    <div>
+
+                        <span>
+                            NOTIFICAÇÕES
+                        </span>
+
+                        <strong>
+                            Avisos do sistema
+                        </strong>
+
+                    </div>
+
+
+                    <button
+                        id="marcarAvisosLidos"
+                        type="button"
+                    >
+                        Marcar como lidos
+                    </button>
+
                 </div>
-                <div class="notifications-list" id="notificationsList"></div>
-                <div class="notifications-empty" id="notificationsEmpty" hidden>
-                    <div class="notifications-empty-icon">✓</div>
-                    <strong>✓ Tudo em dia</strong>
+
+
+                <div
+                    class="notifications-list"
+                    id="notificationsList"
+                >
                 </div>
+
+
+                <div
+                    class="notifications-empty"
+                    id="notificationsEmpty"
+                    hidden
+                >
+
+                    <div class="notifications-empty-icon">
+                        ✓
+                    </div>
+
+                    <strong>
+                        ✓ Tudo em dia
+                    </strong>
+
+                </div>
+
             </div>
 
-            <button class="user-profile" onclick="window.location.href='../perfil/index.html'">
 
 
-                <div class="avatar" id="avatarUsuario">
+            <!-- USUÁRIO -->
+
+            <button
+                class="user-profile"
+                type="button"
+                onclick="window.location.href='../perfil/index.html'"
+            >
+
+
+                <div
+                    class="avatar"
+                    id="avatarUsuario"
+                >
                     U
                 </div>
 
 
                 <div class="user-info">
 
-                <strong id="nomeUsuarioMenu">
-                    Usuário
-                </strong>
+                    <strong id="nomeUsuarioMenu">
+                        Usuário
+                    </strong>
+
                     <span>
                         Administrador
                     </span>
@@ -405,7 +223,10 @@
             <div>
 
                 <h1>
-    Olá, <strong id="nomeUsuario">Usuário</strong>
+                    Olá,
+                    <strong id="nomeUsuario">
+                        Usuário
+                    </strong>
                 </h1>
 
                 <p>
@@ -415,6 +236,8 @@
             </div>
 
 
+
+            <!-- DATA -->
 
             <div class="date-box">
 
@@ -461,12 +284,12 @@
 
                     <div class="stat-icon blue">
 
-
                         <svg
                             viewBox="0 0 24 24"
                             fill="none"
                             stroke="currentColor"
-                            stroke-width="1.8">
+                            stroke-width="1.8"
+                        >
 
                             <path
                                 d="M21 8l-9-5-9 5 9 5 9-5z"
@@ -482,7 +305,6 @@
 
                         </svg>
 
-
                     </div>
 
 
@@ -494,19 +316,15 @@
                 </div>
 
 
-
                 <div class="stat-content">
-
 
                     <strong id="produtosAtivos">
                         0
                     </strong>
 
-
                     <span>
                         Produtos ativos
                     </span>
-
 
                 </div>
 
@@ -525,31 +343,22 @@
 
                     <div class="stat-icon indigo">
 
-
                         <svg
                             viewBox="0 0 24 24"
                             fill="none"
                             stroke="currentColor"
-                            stroke-width="1.8">
+                            stroke-width="1.8"
+                        >
 
-                            <path
-                                d="M7 7h13"
-                            />
+                            <path d="M7 7h13" />
 
-                            <path
-                                d="M17 3l4 4-4 4"
-                            />
+                            <path d="M17 3l4 4-4 4" />
 
-                            <path
-                                d="M17 17H4"
-                            />
+                            <path d="M17 17H4" />
 
-                            <path
-                                d="M7 13l-4 4 4 4"
-                            />
+                            <path d="M7 13l-4 4 4 4" />
 
                         </svg>
-
 
                     </div>
 
@@ -562,17 +371,15 @@
                 </div>
 
 
-
                 <div class="stat-content">
 
-
-                    <strong id="totalMovimentacoes">0</strong>
-
+                    <strong id="totalMovimentacoes">
+                        0
+                    </strong>
 
                     <span>
                         Movimentações
                     </span>
-
 
                 </div>
 
@@ -591,27 +398,22 @@
 
                     <div class="stat-icon orange">
 
-
                         <svg
                             viewBox="0 0 24 24"
                             fill="none"
                             stroke="currentColor"
-                            stroke-width="1.8">
+                            stroke-width="1.8"
+                        >
 
                             <path
                                 d="M10.3 3.2L2.7 17a2 2 0 0 0 1.8 3h15a2 2 0 0 0 1.8-3L13.7 3.2a2 2 0 0 0-3.4 0z"
                             />
 
-                            <path
-                                d="M12 8v5"
-                            />
+                            <path d="M12 8v5" />
 
-                            <path
-                                d="M12 16h.01"
-                            />
+                            <path d="M12 16h.01" />
 
                         </svg>
-
 
                     </div>
 
@@ -624,19 +426,15 @@
                 </div>
 
 
-
                 <div class="stat-content">
-
 
                     <strong id="estoqueMinimo">
                         0
                     </strong>
 
-
                     <span>
                         Estoque abaixo do mínimo
                     </span>
-
 
                 </div>
 
@@ -645,7 +443,7 @@
 
 
 
-            <!-- QUANTIDADE EM ESTOQUE -->
+            <!-- QUANTIDADE -->
 
             <article class="stat-card">
 
@@ -655,23 +453,20 @@
 
                     <div class="stat-icon green">
 
-
                         <svg
                             viewBox="0 0 24 24"
                             fill="none"
                             stroke="currentColor"
-                            stroke-width="1.8">
+                            stroke-width="1.8"
+                        >
 
-                            <path
-                                d="M12 3v18"
-                            />
+                            <path d="M12 3v18" />
 
                             <path
                                 d="M17 7.5c0-2-2.2-3.5-5-3.5S7 5.5 7 7.5s2.2 3.5 5 3.5 5 1.5 5 3.5-2.2 3.5-5 3.5-5-1.5-5-3.5"
                             />
 
                         </svg>
-
 
                     </div>
 
@@ -684,19 +479,15 @@
                 </div>
 
 
-
                 <div class="stat-content">
-
 
                     <strong id="estoqueMaximo">
                         0
                     </strong>
 
-
                     <span>
                         Quantidade em estoque
                     </span>
-
 
                 </div>
 
@@ -742,8 +533,9 @@
 
                 <button
                     class="quick-action entrada"
-                    data-page="Entrada">
-
+                    data-page="Entrada"
+                    type="button"
+                >
 
                     <span class="quick-icon">
                         ↓
@@ -767,7 +559,6 @@
                         →
                     </span>
 
-
                 </button>
 
 
@@ -776,8 +567,9 @@
 
                 <button
                     class="quick-action saida"
-                    data-page="Saída">
-
+                    data-page="Saída"
+                    type="button"
+                >
 
                     <span class="quick-icon">
                         ↑
@@ -801,7 +593,6 @@
                         →
                     </span>
 
-
                 </button>
 
 
@@ -810,8 +601,9 @@
 
                 <button
                     class="quick-action movimentacao"
-                    data-page="Movimentações">
-
+                    data-page="Movimentações"
+                    type="button"
+                >
 
                     <span class="quick-icon">
                         ↔
@@ -835,7 +627,6 @@
                         →
                     </span>
 
-
                 </button>
 
 
@@ -844,8 +635,9 @@
 
                 <button
                     class="quick-action compra"
-                    data-page="Solicitações">
-
+                    data-page="Solicitações"
+                    type="button"
+                >
 
                     <span class="quick-icon">
                         +
@@ -869,7 +661,6 @@
                         →
                     </span>
 
-
                 </button>
 
 
@@ -887,9 +678,7 @@
         <section class="bottom-grid">
 
 
-            <!-- =================================
-                 MOVIMENTAÇÕES
-            ================================== -->
+            <!-- MOVIMENTAÇÕES -->
 
             <div class="panel movements-panel">
 
@@ -910,9 +699,14 @@
                     </div>
 
 
-                    <button class="see-all" id="verTodasMovimentacoes" type="button">
+                    <button
+                        class="see-all"
+                        id="verTodasMovimentacoes"
+                        type="button"
+                    >
                         Ver todas
                     </button>
+
 
                 </div>
 
@@ -943,9 +737,7 @@
 
 
 
-            <!-- =================================
-                 ALERTAS
-            ================================== -->
+            <!-- ALERTAS -->
 
             <div class="panel alerts-panel">
 
@@ -975,16 +767,10 @@
 
 
 
-                <!--
-                    Quando não houver produtos
-                    abaixo do mínimo, o JavaScript
-                    mostra "Tudo certo!" aqui.
-                -->
-
                 <div
                     class="empty-state"
-                    id="alertEmptyState">
-
+                    id="alertEmptyState"
+                >
 
                     <div class="empty-icon success">
                         ✓
@@ -1001,20 +787,14 @@
                         do estoque mínimo.
                     </span>
 
-
                 </div>
 
 
 
-                <!--
-                    O JavaScript cria aqui
-                    um cartão para CADA produto
-                    que estiver abaixo do mínimo.
-                -->
-
                 <div
                     class="alert-products-list"
-                    id="alertProductsList">
+                    id="alertProductsList"
+                >
                 </div>
 
 
@@ -1033,9 +813,11 @@
 
 <!-- =========================================
      JAVASCRIPT
-========================================== -->
+========================================= -->
+<script src="../componentes/sidebar.js"></script>
 <script src="../auth.js"></script>
 <script src="script.js"></script>
+
 
 </body>
 

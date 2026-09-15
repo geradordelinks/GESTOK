@@ -13,194 +13,13 @@
     rel="stylesheet"
     href="style.css"
 >
+<link
+     rel="stylesheet"
+    href="../componentes/sidebar.css"
+>
 </head>
 <body>
-    <div class="overlay" id="overlay"></div>
-    <aside class="sidebar" id="sidebar">
-
-    <div class="sidebar-top">
-
-        <a href="../sistema/index.html" class="brand">
-
-            <div class="brand-icon">
-                G
-            </div>
-
-            <div>
-                <strong>Gestok</strong>
-                <span>Gestão de estoque</span>
-            </div>
-
-        </a>
-
-        <button
-            class="close-sidebar"
-            id="closeSidebar"
-            aria-label="Fechar menu">
-
-            ×
-
-        </button>
-
-    </div>
-
-
-    <nav class="navigation">
-
-        <span class="nav-title">
-            PRINCIPAL
-        </span>
-
-
-        <!-- DASHBOARD -->
-
-        <a
-            href="../sistema/index.html"
-            class="nav-item">
-
-            <span class="nav-icon">⌂</span>
-
-            <span>Dashboard</span>
-
-        </a>
-
-
-        <!-- PRODUTOS -->
-
-        <a
-            href="../produtos/consulta/index.html"
-            class="nav-item">
-
-            <span class="nav-icon">▣</span>
-
-            <span>Produtos</span>
-
-        </a>
-
-
-        <!-- CRIAR PRODUTO -->
-
-        <a
-            href="../produtos/index.html#novo"
-            class="nav-item nav-create-product">
-
-            <span class="nav-icon">＋</span>
-
-            <div>
-
-                <strong>Criar produto</strong>
-
-                <small>Novo item no estoque</small>
-
-            </div>
-
-        </a>
-
-
-        <span class="nav-title">
-            ESTOQUE
-        </span>
-
-
-        <!-- ENTRADA -->
-
-        <a
-            href="../entrada/index.html"
-            class="nav-item">
-            <span class="nav-icon">↓</span>
-
-            <span>Entrada</span>
-
-        </a>
-
-
-        <!-- SAÍDA -->
-
-        <a
-            href="../saida/index.html"
-            class="nav-item active">
-
-            <span class="nav-icon">↑</span>
-
-            <span>Saída</span>
-
-        </a>
-
-
-        <!-- MOVIMENTAÇÕES -->
-
-        <a
-            href="../movimentacoes/index.html"
-            class="nav-item">
-
-            <span class="nav-icon">↔</span>
-
-            <span>Movimentações</span>
-
-        </a>
-
-
-        <span class="nav-title">
-            GESTÃO
-        </span>
-
-
-        <!-- SOLICITAÇÕES -->
-
-        <a
-            href="#"
-            class="nav-item">
-
-            <span class="nav-icon">□</span>
-
-            <span>Solicitações</span>
-
-        </a>
-
-
-        <!-- OPERADORES -->
-
-        <a
-            href="#"
-            class="nav-item">
-
-            <span class="nav-icon">♙</span>
-
-            <span>Operadores</span>
-
-        </a>
-
-        <a href="../perfil/index.html" class="nav-item">
-            <span class="nav-icon">◉</span>
-            <span>Perfil</span>
-        </a>
-
-    </nav>
-
-
-    <div class="sidebar-bottom">
-
-        <div class="system-status">
-
-            <span class="status-dot"></span>
-
-            <div>
-
-                <strong>
-                    Sistema online
-                </strong>
-
-                <small>
-                    Todos os serviços funcionando
-                </small>
-
-            </div>
-
-        </div>
-
-    </div>
-
-</aside>
+<div id="gestok-sidebar-container"></div>
 <header class="header">
 
     <div class="header-left">
@@ -217,7 +36,7 @@
         </button>
 
         <div class="page-name">
-            Entrada de estoque
+            Saída de estoque
         </div>
 
     </div>
@@ -463,7 +282,7 @@
             <div class="form-footer">
 
                 <a
-                    href="../index.html"
+                    href="../sistema/index.html"
                     class="secondary-button"
                 >
                     Cancelar
@@ -485,5 +304,6 @@
     </section>
 </main>
 <script src="script.js"></script>
+<script src="../componentes/sidebar.js"></script>
 </body>
 </html>
