@@ -1071,18 +1071,14 @@ function atualizarData() {
             "currentDate"
         );
 
-
     if (!elemento) {
         return;
     }
 
-
     const agora =
         new Date();
 
-
     const meses = [
-
         "Jan",
         "Fev",
         "Mar",
@@ -1095,28 +1091,20 @@ function atualizarData() {
         "Out",
         "Nov",
         "Dez"
-
     ];
-
 
     const dia =
         String(
             agora.getDate()
-        ).padStart(
-            2,
-            "0"
-        );
-
+        ).padStart(2, "0");
 
     const mes =
         meses[
             agora.getMonth()
         ];
 
-
     const ano =
         agora.getFullYear();
-
 
     elemento.textContent =
         `${dia} ${mes} ${ano}`;
@@ -1125,49 +1113,48 @@ function atualizarData() {
 
 
 /* =========================================
-   OBTER PRODUTOS
+   PRODUTOS DO FIRESTORE
+   -----------------------------------------
+   O dashboard não usa mais gestok_produtos.
 ========================================= */
 
-function obterProdutos() {
-
-    const dados =
-        localStorage.getItem(
-            "gestok_produtos"
-        );
+let cancelarProdutosDashboard = null;
 
 
-    if (!dados) {
+function obterLojaDashboardGestok() {
 
-        return [];
+    const usuario =
+        usuarioFirebaseAtualGestok();
 
+    const conta =
+        obterContaGestok();
+
+    if (!usuario || !conta || !conta.lojaId) {
+        return null;
     }
 
-
-    try {
-
-        const produtos =
-            JSON.parse(dados);
-
-
-        if (!Array.isArray(produtos)) {
-
-            return [];
-
-        }
-
-
-        return produtos;
-
-    } catch (erro) {
-
-        console.error(
-            "Erro ao carregar produtos:",
-            erro
-        );
-
-        return [];
-
+    if (
+        conta.firebaseUid &&
+        conta.firebaseUid !== usuario.uid
+    ) {
+        return null;
     }
+
+    return conta.lojaId;
+
+}
+
+
+function obterProdutosDashboard() {
+
+    const lojaId =
+        obterLojaDashboardGestok();
+
+    if (!lojaId) {
+        return null;
+    }
+
+    return referenciaProdutos(lojaId);
 
 }
 
@@ -1176,15 +1163,9 @@ function obterProdutos() {
    ATUALIZAR DASHBOARD
 ========================================= */
 
-function atualizarDashboard() {
-
-    const produtos =
-        obterProdutos();
-
-
-    /* =====================================
-       PRODUTOS ATIVOS
-    ====================================== */
+function atualizarDashboard(
+    produtos = []
+) {
 
     const produtosAtivos =
         produtos.filter(
@@ -1196,10 +1177,6 @@ function atualizarDashboard() {
         );
 
 
-    /* =====================================
-       ESTOQUE ABAIXO DO MÍNIMO
-    ====================================== */
-
     const estoqueMinimo =
         produtosAtivos.filter(
             function (produto) {
@@ -1209,12 +1186,10 @@ function atualizarDashboard() {
                         produto.quantidade || 0
                     );
 
-
                 const minimo =
                     Number(
                         produto.estoqueMinimo || 0
                     );
-
 
                 return (
                     minimo > 0 &&
@@ -1224,10 +1199,6 @@ function atualizarDashboard() {
             }
         );
 
-
-    /* =====================================
-       QUANTIDADE TOTAL
-    ====================================== */
 
     const quantidadeTotal =
         produtosAtivos.reduce(
@@ -1248,21 +1219,15 @@ function atualizarDashboard() {
         );
 
 
-    /* =====================================
-       ELEMENTOS
-    ====================================== */
-
     const elementoProdutos =
         document.getElementById(
             "produtosAtivos"
         );
 
-
     const elementoEstoqueMinimo =
         document.getElementById(
             "estoqueMinimo"
         );
-
 
     const elementoEstoqueMaximo =
         document.getElementById(
@@ -1277,14 +1242,12 @@ function atualizarDashboard() {
 
     }
 
-
     if (elementoEstoqueMinimo) {
 
         elementoEstoqueMinimo.textContent =
             estoqueMinimo.length;
 
     }
-
 
     if (elementoEstoqueMaximo) {
 
@@ -1294,15 +1257,10 @@ function atualizarDashboard() {
     }
 
 
-    /* =====================================
-       CONTADOR DE ALERTAS
-    ====================================== */
-
     const alertCount =
         document.querySelector(
             ".alert-count"
         );
-
 
     if (alertCount) {
 
@@ -1312,13 +1270,78 @@ function atualizarDashboard() {
     }
 
 
-    /* =====================================
-       ATUALIZAR ALERTAS
-    ====================================== */
-
     atualizarEstadoAlertas(
         estoqueMinimo
     );
+
+}
+
+
+/* =========================================
+   MONITORAR PRODUTOS EM TEMPO REAL
+========================================= */
+
+function iniciarMonitoramentoProdutosDashboard() {
+
+    if (cancelarProdutosDashboard) {
+
+        cancelarProdutosDashboard();
+        cancelarProdutosDashboard = null;
+
+    }
+
+
+    const referencia =
+        obterProdutosDashboard();
+
+
+    if (!referencia) {
+
+        atualizarDashboard([]);
+        return;
+
+    }
+
+
+    cancelarProdutosDashboard =
+        referencia
+            .onSnapshot(
+                function (snapshot) {
+
+                    const produtos =
+                        snapshot.docs.map(
+                            function (doc) {
+
+                                return {
+                                    id: doc.id,
+                                    ...doc.data()
+                                };
+
+                            }
+                        );
+
+                    atualizarDashboard(
+                        produtos
+                    );
+
+                    console.log(
+                        "Dashboard atualizado pelo Firestore.",
+                        produtos.length,
+                        "produtos"
+                    );
+
+                },
+                function (erro) {
+
+                    console.error(
+                        "Erro ao monitorar produtos do dashboard:",
+                        erro
+                    );
+
+                    atualizarDashboard([]);
+
+                }
+            );
 
 }
 
@@ -1336,12 +1359,10 @@ function atualizarEstadoAlertas(
             "alertEmptyState"
         );
 
-
     const lista =
         document.getElementById(
             "alertProductsList"
         );
-
 
     if (!emptyState || !lista) {
 
@@ -1353,14 +1374,8 @@ function atualizarEstadoAlertas(
 
     }
 
+    lista.innerHTML = "";
 
-    lista.innerHTML =
-        "";
-
-
-    /* =====================================
-       NENHUM ALERTA
-    ====================================== */
 
     if (
         produtosAbaixoMinimo.length === 0
@@ -1368,7 +1383,6 @@ function atualizarEstadoAlertas(
 
         emptyState.style.display =
             "flex";
-
 
         emptyState.innerHTML = `
 
@@ -1392,10 +1406,6 @@ function atualizarEstadoAlertas(
     }
 
 
-    /* =====================================
-       EXISTEM ALERTAS
-    ====================================== */
-
     emptyState.style.display =
         "none";
 
@@ -1408,26 +1418,21 @@ function atualizarEstadoAlertas(
                     produto.quantidade || 0
                 );
 
-
             const minimo =
                 Number(
                     produto.estoqueMinimo || 0
                 );
 
-
             const unidade =
                 produto.unidade || "UN";
-
 
             const card =
                 document.createElement(
                     "div"
                 );
 
-
             card.className =
                 "alert-product-card";
-
 
             card.innerHTML = `
 
@@ -1440,17 +1445,14 @@ function atualizarEstadoAlertas(
                     <div class="alert-product-name">
 
                         <strong>
-                            ${
-                                produto.nome ||
-                                "Produto sem nome"
-                            }
+                            ${escaparHtmlDashboard(produto.nome || "Produto sem nome")}
                         </strong>
 
                         ${
                             produto.codigo
                                 ? `
                                     <small>
-                                        Código: ${produto.codigo}
+                                        Código: ${escaparHtmlDashboard(produto.codigo)}
                                     </small>
                                   `
                                 : ""
@@ -1460,52 +1462,46 @@ function atualizarEstadoAlertas(
 
                 </div>
 
-
                 <div class="alert-product-details">
 
                     <div>
-
-                        <span>
-                            Estoque atual
-                        </span>
-
+                        <span>Estoque atual</span>
                         <strong>
-                            ${quantidade} ${unidade}
+                            ${quantidade} ${escaparHtmlDashboard(unidade)}
                         </strong>
-
                     </div>
 
-
                     <div>
-
-                        <span>
-                            Estoque mínimo
-                        </span>
-
+                        <span>Estoque mínimo</span>
                         <strong>
-                            ${minimo} ${unidade}
+                            ${minimo} ${escaparHtmlDashboard(unidade)}
                         </strong>
-
                     </div>
 
                 </div>
 
-
                 <div class="alert-product-warning">
-
                     ⚠ Estoque abaixo do mínimo
-
                 </div>
 
             `;
 
-
-            lista.appendChild(
-                card
-            );
+            lista.appendChild(card);
 
         }
     );
+
+}
+
+
+function escaparHtmlDashboard(texto) {
+
+    return String(texto ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
 
 }
 
@@ -1634,24 +1630,11 @@ window.addEventListener(
 
         if (
             evento.key ===
-            "gestok_produtos"
-        ) {
-
-            atualizarDashboard();
-
-            atualizarMovimentacoesDashboard();
-
-            atualizarNumeroMovimentacoes();
-
-        }
-
-
-        if (
-            evento.key ===
             "gestok_conta"
         ) {
 
             atualizarNomeUsuario();
+            iniciarMonitoramentoProdutosDashboard();
 
         }
 
@@ -1672,7 +1655,7 @@ document.addEventListener(
             "visible"
         ) {
 
-            atualizarDashboard();
+            iniciarMonitoramentoProdutosDashboard();
 
             atualizarMovimentacoesDashboard();
 
@@ -1696,7 +1679,7 @@ document.addEventListener(
 
         atualizarData();
 
-        atualizarDashboard();
+        iniciarMonitoramentoProdutosDashboard();
 
         atualizarMovimentacoesDashboard();
 
@@ -1720,7 +1703,7 @@ window.addEventListener(
 
         atualizarData();
 
-        atualizarDashboard();
+        iniciarMonitoramentoProdutosDashboard();
 
         atualizarMovimentacoesDashboard();
 
