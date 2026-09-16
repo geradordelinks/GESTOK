@@ -133,7 +133,7 @@ let produtosCache = [];
 
 
 /* =========================================
-   OBTER LOJA ATUAL
+   OBTER LOJA DO USUÁRIO FIREBASE
 ========================================= */
 
 async function obterLojaAtualEntradaGestok() {
@@ -141,74 +141,109 @@ async function obterLojaAtualEntradaGestok() {
     const usuario =
         usuarioFirebaseAtualGestok();
 
+
     if (!usuario) {
 
-        return null;
-
-    }
-
-
-    /*
-       Primeiro tenta o espelho local.
-       Ele continua sendo usado somente
-       para localizar a loja.
-    */
-
-    const conta =
-        obterContaGestok();
-
-
-    if (
-        conta &&
-        conta.lojaId &&
-        (
-            !conta.firebaseUid ||
-            conta.firebaseUid === usuario.uid
-        )
-    ) {
-
-        return conta.lojaId;
-
-    }
-
-
-    /*
-       Se o espelho local não existir,
-       procura a loja pelo UID autenticado.
-    */
-
-    try {
-
-        const snapshot =
-            await db
-                .collection("lojas")
-                .where(
-                    "donoUid",
-                    "==",
-                    usuario.uid
-                )
-                .limit(1)
-                .get();
-
-
-        if (!snapshot.empty) {
-
-            return snapshot.docs[0].id;
-
-        }
-
-
-    } catch (erro) {
-
-        console.error(
-            "Erro ao localizar loja:",
-            erro
+        throw new Error(
+            "Usuário não autenticado."
         );
 
     }
 
 
-    return null;
+    const uid =
+        usuario.uid;
+
+
+    console.log(
+        "Entrada - UID autenticado:",
+        uid
+    );
+
+
+    /* =====================================
+       PROCURAR O USUÁRIO NAS LOJAS
+    ===================================== */
+
+    const lojasSnapshot =
+        await db
+            .collection("lojas")
+            .get();
+
+
+    for (
+        const lojaDoc
+        of lojasSnapshot.docs
+    ) {
+
+        const usuarioRef =
+            lojaDoc
+                .ref
+                .collection("usuarios")
+                .doc(uid);
+
+
+        const usuarioSnapshot =
+            await usuarioRef.get();
+
+
+        if (
+            usuarioSnapshot.exists
+        ) {
+
+            console.log(
+                "Entrada - Loja encontrada:",
+                lojaDoc.id
+            );
+
+
+            return lojaDoc.id;
+
+        }
+
+    }
+
+
+    /* =====================================
+       PROCURAR COMO DONO DA LOJA
+    ===================================== */
+
+    const donoSnapshot =
+        await db
+            .collection("lojas")
+            .where(
+                "donoUid",
+                "==",
+                uid
+            )
+            .limit(1)
+            .get();
+
+
+    if (
+        !donoSnapshot.empty
+    ) {
+
+        const lojaId =
+            donoSnapshot
+                .docs[0]
+                .id;
+
+
+        console.log(
+            "Entrada - Loja encontrada pelo donoUid:",
+            lojaId
+        );
+
+
+        return lojaId;
+
+    }
+
+
+    throw new Error(
+        "Não foi encontrada uma loja vinculada ao usuário."
+    );
 
 }
 
@@ -223,16 +258,9 @@ async function referenciaProdutosEntradaGestok() {
         await obterLojaAtualEntradaGestok();
 
 
-    if (!lojaId) {
-
-        throw new Error(
-            "Loja atual não identificada."
-        );
-
-    }
-
-
-    return referenciaProdutos(lojaId);
+    return referenciaProdutos(
+        lojaId
+    );
 
 }
 
@@ -247,16 +275,9 @@ async function referenciaMovimentacoesEntradaGestok() {
         await obterLojaAtualEntradaGestok();
 
 
-    if (!lojaId) {
-
-        throw new Error(
-            "Loja atual não identificada."
-        );
-
-    }
-
-
-    return referenciaMovimentacoes(lojaId);
+    return referenciaMovimentacoes(
+        lojaId
+    );
 
 }
 
@@ -283,19 +304,36 @@ async function carregarProdutos() {
 
     try {
 
-        const referencia =
-            await referenciaProdutosEntradaGestok();
+        const lojaId =
+            await obterLojaAtualEntradaGestok();
+
+
+        console.log(
+            "Entrada - carregando produtos da loja:",
+            lojaId
+        );
+
+
+        const produtosRef =
+            referenciaProdutos(
+                lojaId
+            );
 
 
         /*
-           Não usamos orderBy aqui.
+           IMPORTANTE:
 
-           Assim evitamos problema caso algum
-           produto antigo não possua o campo nome.
+           A partir daqui a Entrada NÃO consulta:
+
+           localStorage
+           gestok_produtos
+           gestok_conta
+
+           A lista vem diretamente do Firestore.
         */
 
         const snapshot =
-            await referencia.get();
+            await produtosRef.get();
 
 
         produtosCache =
@@ -304,7 +342,8 @@ async function carregarProdutos() {
 
                     return {
 
-                        id: doc.id,
+                        id:
+                            doc.id,
 
                         ...doc.data()
 
@@ -313,7 +352,9 @@ async function carregarProdutos() {
                 })
                 .filter(function (produto) {
 
-                    return produto.ativo !== false;
+                    return (
+                        produto.ativo !== false
+                    );
 
                 })
                 .sort(function (a, b) {
@@ -321,12 +362,16 @@ async function carregarProdutos() {
                     const nomeA =
                         String(
                             a.nome || ""
-                        ).toLowerCase();
+                        )
+                            .toLowerCase();
+
 
                     const nomeB =
                         String(
                             b.nome || ""
-                        ).toLowerCase();
+                        )
+                            .toLowerCase();
+
 
                     return nomeA.localeCompare(
                         nomeB,
@@ -336,6 +381,16 @@ async function carregarProdutos() {
                 });
 
 
+        console.log(
+            "Entrada - produtos encontrados:",
+            produtosCache
+        );
+
+
+        /* =================================
+           LIMPAR SELECT
+        ================================= */
+
         selectProduto.innerHTML = `
             <option value="">
                 Selecione um produto
@@ -343,7 +398,13 @@ async function carregarProdutos() {
         `;
 
 
-        if (produtosCache.length === 0) {
+        /* =================================
+           NENHUM PRODUTO
+        ================================= */
+
+        if (
+            produtosCache.length === 0
+        ) {
 
             selectProduto.innerHTML = `
                 <option value="">
@@ -351,12 +412,17 @@ async function carregarProdutos() {
                 </option>
             `;
 
+
             atualizarInformacoes();
 
             return;
 
         }
 
+
+        /* =================================
+           ADICIONAR PRODUTOS
+        ================================= */
 
         produtosCache.forEach(
             function (produto) {
@@ -371,10 +437,22 @@ async function carregarProdutos() {
                     produto.id;
 
 
+                const nome =
+                    String(
+                        produto.nome || ""
+                    );
+
+
+                const codigo =
+                    String(
+                        produto.codigo || ""
+                    );
+
+
                 option.textContent =
-                    produto.codigo
-                        ? `${produto.nome} — ${produto.codigo}`
-                        : produto.nome;
+                    codigo
+                        ? `${nome} — ${codigo}`
+                        : nome;
 
 
                 selectProduto.appendChild(
@@ -389,7 +467,7 @@ async function carregarProdutos() {
 
 
         console.log(
-            "Produtos carregados na Entrada:",
+            "Entrada - total:",
             produtosCache.length
         );
 
@@ -397,7 +475,7 @@ async function carregarProdutos() {
     } catch (erro) {
 
         console.error(
-            "Erro ao carregar produtos:",
+            "Erro ao carregar produtos na Entrada:",
             erro
         );
 
@@ -410,7 +488,7 @@ async function carregarProdutos() {
 
 
         alert(
-            mensagemErroFirebaseGestok(erro)
+            "Não foi possível carregar os produtos da loja."
         );
 
     }
@@ -462,21 +540,24 @@ function atualizarInformacoes() {
 
         if (estoqueAtual) {
 
-            estoqueAtual.textContent = "-";
+            estoqueAtual.textContent =
+                "-";
 
         }
 
 
         if (unidadeProduto) {
 
-            unidadeProduto.textContent = "-";
+            unidadeProduto.textContent =
+                "-";
 
         }
 
 
         if (novoEstoque) {
 
-            novoEstoque.textContent = "-";
+            novoEstoque.textContent =
+                "-";
 
         }
 
@@ -538,7 +619,8 @@ if (selectProduto) {
 
             if (quantidadeEntrada) {
 
-                quantidadeEntrada.value = "";
+                quantidadeEntrada.value =
+                    "";
 
             }
 
@@ -619,7 +701,9 @@ if (form) {
 
 
             if (
-                !Number.isFinite(quantidade) ||
+                !Number.isFinite(
+                    quantidade
+                ) ||
                 quantidade <= 0
             ) {
 
@@ -640,15 +724,25 @@ if (form) {
             }
 
 
-            const lojaId =
-                await obterLojaAtualEntradaGestok();
+            let lojaId;
 
 
-            if (!lojaId) {
+            try {
+
+                lojaId =
+                    await obterLojaAtualEntradaGestok();
+
+            } catch (erro) {
+
+                console.error(
+                    erro
+                );
+
 
                 alert(
                     "Não foi possível identificar a loja atual."
                 );
+
 
                 return;
 
@@ -683,7 +777,8 @@ if (form) {
 
                 if (botao) {
 
-                    botao.disabled = true;
+                    botao.disabled =
+                        true;
 
                     botao.textContent =
                         "Registrando...";
@@ -718,7 +813,9 @@ if (form) {
                 ================================= */
 
                 await db.runTransaction(
-                    async function (transaction) {
+                    async function (
+                        transaction
+                    ) {
 
                         const produtoSnap =
                             await transaction.get(
@@ -726,7 +823,9 @@ if (form) {
                             );
 
 
-                        if (!produtoSnap.exists) {
+                        if (
+                            !produtoSnap.exists
+                        ) {
 
                             throw new Error(
                                 "Produto não encontrado."
@@ -740,7 +839,8 @@ if (form) {
 
 
                         if (
-                            produtoAtual.ativo === false
+                            produtoAtual.ativo ===
+                            false
                         ) {
 
                             throw new Error(
@@ -752,7 +852,8 @@ if (form) {
 
                         const estoqueAnterior =
                             Number(
-                                produtoAtual.quantidade || 0
+                                produtoAtual.quantidade ||
+                                0
                             );
 
 
@@ -762,7 +863,8 @@ if (form) {
 
 
                         const agora =
-                            new Date().toISOString();
+                            new Date()
+                                .toISOString();
 
 
                         const ultimaEntrada = {
@@ -816,16 +918,19 @@ if (form) {
                                     produtoRef.id,
 
                                 produto:
-                                    produtoAtual.nome || "",
+                                    produtoAtual.nome ||
+                                    "",
 
                                 codigo:
-                                    produtoAtual.codigo || "",
+                                    produtoAtual.codigo ||
+                                    "",
 
                                 quantidade:
                                     quantidade,
 
                                 unidade:
-                                    produtoAtual.unidade || "UN",
+                                    produtoAtual.unidade ||
+                                    "UN",
 
                                 estoqueAnterior:
                                     estoqueAnterior,
@@ -857,10 +962,12 @@ if (form) {
                         resultadoEntrada = {
 
                             nome:
-                                produtoAtual.nome || "",
+                                produtoAtual.nome ||
+                                "",
 
                             unidade:
-                                produtoAtual.unidade || "UN",
+                                produtoAtual.unidade ||
+                                "UN",
 
                             estoqueAnterior:
                                 estoqueAnterior,
@@ -930,7 +1037,9 @@ if (form) {
 
 
                 alert(
-                    mensagemErroFirebaseGestok(erro)
+                    mensagemErroFirebaseGestok(
+                        erro
+                    )
                 );
 
 
@@ -938,7 +1047,8 @@ if (form) {
 
                 if (botao) {
 
-                    botao.disabled = false;
+                    botao.disabled =
+                        false;
 
                     botao.textContent =
                         textoOriginal ||
@@ -962,18 +1072,13 @@ document.addEventListener(
     "DOMContentLoaded",
     function () {
 
-        /*
-           Espera o Firebase terminar de restaurar
-           a sessão antes de buscar os produtos.
-        */
-
         observarAutenticacaoGestok(
             async function (usuario) {
 
                 if (!usuario) {
 
                     console.log(
-                        "Usuário não autenticado."
+                        "Entrada: usuário não autenticado."
                     );
 
                     return;
@@ -982,12 +1087,23 @@ document.addEventListener(
 
 
                 console.log(
-                    "Usuário autenticado:",
+                    "Entrada: Firebase UID:",
                     usuario.uid
                 );
 
 
-                await carregarProdutos();
+                try {
+
+                    await carregarProdutos();
+
+                } catch (erro) {
+
+                    console.error(
+                        "Erro ao iniciar Entrada:",
+                        erro
+                    );
+
+                }
 
             }
         );
