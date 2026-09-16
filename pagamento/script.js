@@ -112,7 +112,7 @@ document.addEventListener(
                      */
 
                     setTimeout(
-                        function () {
+                        async function () {
 
                             const resultado =
                                 await aprovarPagamentoGestok();
