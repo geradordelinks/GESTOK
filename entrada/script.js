@@ -1,7 +1,9 @@
 /* =========================================
    GESTOK
-   Entrada de estoque
+   ENTRADA DE ESTOQUE
+   FIRESTORE + MULTI-LOJA
 ========================================= */
+
 
 /* =========================================
    MENU LATERAL
@@ -92,11 +94,11 @@ document.addEventListener(
 
     }
 );
+
+
 /* =========================================
    ELEMENTOS
 ========================================= */
-const CHAVE_MOVIMENTACOES =
-    "gestok_movimentacoes";
 
 const form =
     document.getElementById("entradaForm");
@@ -115,145 +117,333 @@ const quantidadeEntrada =
 
 const novoEstoque =
     document.getElementById("novoEstoque");
+
+const motivo =
+    document.getElementById("motivo");
+
+const observacao =
+    document.getElementById("observacao");
+
+
 /* =========================================
-   CONFIGURAÇÃO
+   CACHE DOS PRODUTOS
 ========================================= */
 
-const CHAVE_PRODUTOS =
-    "gestok_produtos";
+let produtosCache = [];
 
 
 /* =========================================
-   OBTER PRODUTOS
+   OBTER LOJA ATUAL
 ========================================= */
 
-function obterProdutos() {
+async function obterLojaAtualEntradaGestok() {
 
-    const produtosSalvos =
-        localStorage.getItem(
-            CHAVE_PRODUTOS
-        );
+    const usuario =
+        usuarioFirebaseAtualGestok();
 
-    if (!produtosSalvos) {
-        return [];
+    if (!usuario) {
+
+        return null;
+
     }
+
+
+    /*
+       Primeiro tenta o espelho local.
+       Ele continua sendo usado somente
+       para localizar a loja.
+    */
+
+    const conta =
+        obterContaGestok();
+
+
+    if (
+        conta &&
+        conta.lojaId &&
+        (
+            !conta.firebaseUid ||
+            conta.firebaseUid === usuario.uid
+        )
+    ) {
+
+        return conta.lojaId;
+
+    }
+
+
+    /*
+       Se o espelho local não existir,
+       procura a loja pelo UID autenticado.
+    */
 
     try {
 
-        return JSON.parse(
-            produtosSalvos
-        );
+        const snapshot =
+            await db
+                .collection("lojas")
+                .where(
+                    "donoUid",
+                    "==",
+                    usuario.uid
+                )
+                .limit(1)
+                .get();
+
+
+        if (!snapshot.empty) {
+
+            return snapshot.docs[0].id;
+
+        }
+
 
     } catch (erro) {
 
         console.error(
-            "Erro ao ler produtos:",
+            "Erro ao localizar loja:",
             erro
         );
 
-        return [];
+    }
+
+
+    return null;
+
+}
+
+
+/* =========================================
+   REFERÊNCIA DOS PRODUTOS
+========================================= */
+
+async function referenciaProdutosEntradaGestok() {
+
+    const lojaId =
+        await obterLojaAtualEntradaGestok();
+
+
+    if (!lojaId) {
+
+        throw new Error(
+            "Loja atual não identificada."
+        );
 
     }
 
-}
 
-
-/* =========================================
-   SALVAR PRODUTOS
-========================================= */
-
-function salvarProdutos(produtos) {
-
-    localStorage.setItem(
-        CHAVE_PRODUTOS,
-        JSON.stringify(produtos)
-    );
+    return referenciaProdutos(lojaId);
 
 }
 
 
 /* =========================================
-   CARREGAR PRODUTOS NO SELECT
+   REFERÊNCIA DAS MOVIMENTAÇÕES
 ========================================= */
 
-function carregarProdutos() {
+async function referenciaMovimentacoesEntradaGestok() {
 
-    const produtos =
-        obterProdutos();
-
-    selectProduto.innerHTML = `
-        <option value="">
-            Selecione um produto
-        </option>
-    `;
+    const lojaId =
+        await obterLojaAtualEntradaGestok();
 
 
-    if (produtos.length === 0) {
+    if (!lojaId) {
 
-        selectProduto.innerHTML = `
-            <option value="">
-                Nenhum produto cadastrado
-            </option>
-        `;
+        throw new Error(
+            "Loja atual não identificada."
+        );
+
+    }
+
+
+    return referenciaMovimentacoes(lojaId);
+
+}
+
+
+/* =========================================
+   CARREGAR PRODUTOS
+========================================= */
+
+async function carregarProdutos() {
+
+    if (!selectProduto) {
 
         return;
 
     }
 
 
-    produtos.forEach(function (produto) {
+    selectProduto.innerHTML = `
+        <option value="">
+            Carregando produtos...
+        </option>
+    `;
+
+
+    try {
+
+        const referencia =
+            await referenciaProdutosEntradaGestok();
+
 
         /*
-         * Produtos inativos não aparecem
-         * para movimentação de estoque.
-         */
+           Não usamos orderBy aqui.
 
-        if (produto.ativo === false) {
+           Assim evitamos problema caso algum
+           produto antigo não possua o campo nome.
+        */
+
+        const snapshot =
+            await referencia.get();
+
+
+        produtosCache =
+            snapshot.docs
+                .map(function (doc) {
+
+                    return {
+
+                        id: doc.id,
+
+                        ...doc.data()
+
+                    };
+
+                })
+                .filter(function (produto) {
+
+                    return produto.ativo !== false;
+
+                })
+                .sort(function (a, b) {
+
+                    const nomeA =
+                        String(
+                            a.nome || ""
+                        ).toLowerCase();
+
+                    const nomeB =
+                        String(
+                            b.nome || ""
+                        ).toLowerCase();
+
+                    return nomeA.localeCompare(
+                        nomeB,
+                        "pt-BR"
+                    );
+
+                });
+
+
+        selectProduto.innerHTML = `
+            <option value="">
+                Selecione um produto
+            </option>
+        `;
+
+
+        if (produtosCache.length === 0) {
+
+            selectProduto.innerHTML = `
+                <option value="">
+                    Nenhum produto cadastrado
+                </option>
+            `;
+
+            atualizarInformacoes();
+
             return;
+
         }
 
 
-        const option =
-            document.createElement("option");
+        produtosCache.forEach(
+            function (produto) {
 
-        option.value =
-            produto.id;
+                const option =
+                    document.createElement(
+                        "option"
+                    );
 
-        option.textContent =
-            produto.codigo
-                ? `${produto.nome} — ${produto.codigo}`
-                : produto.nome;
 
-        selectProduto.appendChild(
-            option
+                option.value =
+                    produto.id;
+
+
+                option.textContent =
+                    produto.codigo
+                        ? `${produto.nome} — ${produto.codigo}`
+                        : produto.nome;
+
+
+                selectProduto.appendChild(
+                    option
+                );
+
+            }
         );
 
-    });
+
+        atualizarInformacoes();
+
+
+        console.log(
+            "Produtos carregados na Entrada:",
+            produtosCache.length
+        );
+
+
+    } catch (erro) {
+
+        console.error(
+            "Erro ao carregar produtos:",
+            erro
+        );
+
+
+        selectProduto.innerHTML = `
+            <option value="">
+                Erro ao carregar produtos
+            </option>
+        `;
+
+
+        alert(
+            mensagemErroFirebaseGestok(erro)
+        );
+
+    }
 
 }
 
 
 /* =========================================
-   BUSCAR PRODUTO SELECIONADO
+   PRODUTO SELECIONADO
 ========================================= */
 
 function obterProdutoSelecionado() {
 
     const id =
-        selectProduto.value;
+        selectProduto
+            ? selectProduto.value
+            : "";
+
 
     if (!id) {
+
         return null;
+
     }
 
-    const produtos =
-        obterProdutos();
 
-    return produtos.find(function (produto) {
+    return produtosCache.find(
+        function (produto) {
 
-        return produto.id === id;
+            return produto.id === id;
 
-    }) || null;
+        }
+    ) || null;
 
 }
 
@@ -270,14 +460,26 @@ function atualizarInformacoes() {
 
     if (!produto) {
 
-        estoqueAtual.textContent =
-            "-";
+        if (estoqueAtual) {
 
-        unidadeProduto.textContent =
-            "-";
+            estoqueAtual.textContent = "-";
 
-        novoEstoque.textContent =
-            "-";
+        }
+
+
+        if (unidadeProduto) {
+
+            unidadeProduto.textContent = "-";
+
+        }
+
+
+        if (novoEstoque) {
+
+            novoEstoque.textContent = "-";
+
+        }
+
 
         return;
 
@@ -289,28 +491,35 @@ function atualizarInformacoes() {
             produto.quantidade || 0
         );
 
+
     const quantidade =
         Number(
-            quantidadeEntrada.value || 0
+            quantidadeEntrada?.value || 0
         );
 
 
-    estoqueAtual.textContent =
-        estoque;
+    if (estoqueAtual) {
 
-    unidadeProduto.textContent =
-        produto.unidade || "UN";
+        estoqueAtual.textContent =
+            estoque;
+
+    }
 
 
-    if (quantidade > 0) {
+    if (unidadeProduto) {
+
+        unidadeProduto.textContent =
+            produto.unidade || "UN";
+
+    }
+
+
+    if (novoEstoque) {
 
         novoEstoque.textContent =
-            estoque + quantidade;
-
-    } else {
-
-        novoEstoque.textContent =
-            "-";
+            quantidade > 0
+                ? estoque + quantidade
+                : "-";
 
     }
 
@@ -318,263 +527,431 @@ function atualizarInformacoes() {
 
 
 /* =========================================
-   SELECIONAR PRODUTO
+   SELEÇÃO DO PRODUTO
 ========================================= */
 
-selectProduto.addEventListener(
-    "change",
-    function () {
+if (selectProduto) {
 
-        quantidadeEntrada.value = "";
+    selectProduto.addEventListener(
+        "change",
+        function () {
 
-        atualizarInformacoes();
+            if (quantidadeEntrada) {
 
-        quantidadeEntrada.focus();
+                quantidadeEntrada.value = "";
 
-    }
-);
+            }
+
+
+            atualizarInformacoes();
+
+
+            if (quantidadeEntrada) {
+
+                quantidadeEntrada.focus();
+
+            }
+
+        }
+    );
+
+}
 
 
 /* =========================================
-   DIGITAR QUANTIDADE
+   QUANTIDADE
 ========================================= */
 
-quantidadeEntrada.addEventListener(
-    "input",
-    function () {
+if (quantidadeEntrada) {
 
-        atualizarInformacoes();
+    quantidadeEntrada.addEventListener(
+        "input",
+        function () {
 
-    }
-);
+            atualizarInformacoes();
+
+        }
+    );
+
+}
 
 
 /* =========================================
    REGISTRAR ENTRADA
 ========================================= */
 
-form.addEventListener(
-    "submit",
-    function (event) {
+if (form) {
 
-        event.preventDefault();
+    form.addEventListener(
+        "submit",
+        async function (event) {
 
-
-        const produto =
-            obterProdutoSelecionado();
+            event.preventDefault();
 
 
-        if (!produto) {
+            const produto =
+                obterProdutoSelecionado();
 
-            alert(
-                "Selecione um produto."
-            );
 
-            selectProduto.focus();
+            if (!produto) {
 
-            return;
+                alert(
+                    "Selecione um produto."
+                );
+
+
+                if (selectProduto) {
+
+                    selectProduto.focus();
+
+                }
+
+
+                return;
+
+            }
+
+
+            const quantidade =
+                Number(
+                    quantidadeEntrada?.value
+                );
+
+
+            if (
+                !Number.isFinite(quantidade) ||
+                quantidade <= 0
+            ) {
+
+                alert(
+                    "Informe uma quantidade válida para a entrada."
+                );
+
+
+                if (quantidadeEntrada) {
+
+                    quantidadeEntrada.focus();
+
+                }
+
+
+                return;
+
+            }
+
+
+            const lojaId =
+                await obterLojaAtualEntradaGestok();
+
+
+            if (!lojaId) {
+
+                alert(
+                    "Não foi possível identificar a loja atual."
+                );
+
+                return;
+
+            }
+
+
+            const motivoValor =
+                motivo
+                    ? motivo.value.trim()
+                    : "";
+
+
+            const observacaoValor =
+                observacao
+                    ? observacao.value.trim()
+                    : "";
+
+
+            const botao =
+                form.querySelector(
+                    "button[type='submit']"
+                );
+
+
+            const textoOriginal =
+                botao
+                    ? botao.textContent
+                    : "";
+
+
+            try {
+
+                if (botao) {
+
+                    botao.disabled = true;
+
+                    botao.textContent =
+                        "Registrando...";
+
+                }
+
+
+                const produtoRef =
+                    referenciaProdutos(
+                        lojaId
+                    ).doc(
+                        produto.id
+                    );
+
+
+                const movimentacaoRef =
+                    referenciaMovimentacoes(
+                        lojaId
+                    ).doc();
+
+
+                const usuario =
+                    usuarioFirebaseAtualGestok();
+
+
+                let resultadoEntrada =
+                    null;
+
+
+                /* =================================
+                   TRANSAÇÃO ATÔMICA
+                ================================= */
+
+                await db.runTransaction(
+                    async function (transaction) {
+
+                        const produtoSnap =
+                            await transaction.get(
+                                produtoRef
+                            );
+
+
+                        if (!produtoSnap.exists) {
+
+                            throw new Error(
+                                "Produto não encontrado."
+                            );
+
+                        }
+
+
+                        const produtoAtual =
+                            produtoSnap.data();
+
+
+                        if (
+                            produtoAtual.ativo === false
+                        ) {
+
+                            throw new Error(
+                                "Este produto está inativo."
+                            );
+
+                        }
+
+
+                        const estoqueAnterior =
+                            Number(
+                                produtoAtual.quantidade || 0
+                            );
+
+
+                        const estoqueNovo =
+                            estoqueAnterior +
+                            quantidade;
+
+
+                        const agora =
+                            new Date().toISOString();
+
+
+                        const ultimaEntrada = {
+
+                            quantidade:
+                                quantidade,
+
+                            estoqueAnterior:
+                                estoqueAnterior,
+
+                            estoqueNovo:
+                                estoqueNovo,
+
+                            motivo:
+                                motivoValor,
+
+                            observacao:
+                                observacaoValor,
+
+                            data:
+                                agora
+
+                        };
+
+
+                        transaction.update(
+                            produtoRef,
+                            {
+
+                                quantidade:
+                                    estoqueNovo,
+
+                                ultimaEntrada:
+                                    ultimaEntrada,
+
+                                dataAtualizacao:
+                                    agora
+
+                            }
+                        );
+
+
+                        transaction.set(
+                            movimentacaoRef,
+                            {
+
+                                tipo:
+                                    "Entrada",
+
+                                produtoId:
+                                    produtoRef.id,
+
+                                produto:
+                                    produtoAtual.nome || "",
+
+                                codigo:
+                                    produtoAtual.codigo || "",
+
+                                quantidade:
+                                    quantidade,
+
+                                unidade:
+                                    produtoAtual.unidade || "UN",
+
+                                estoqueAnterior:
+                                    estoqueAnterior,
+
+                                estoqueNovo:
+                                    estoqueNovo,
+
+                                motivo:
+                                    motivoValor,
+
+                                observacao:
+                                    observacaoValor,
+
+                                usuarioUid:
+                                    usuario
+                                        ? usuario.uid
+                                        : null,
+
+                                lojaId:
+                                    lojaId,
+
+                                data:
+                                    agora
+
+                            }
+                        );
+
+
+                        resultadoEntrada = {
+
+                            nome:
+                                produtoAtual.nome || "",
+
+                            unidade:
+                                produtoAtual.unidade || "UN",
+
+                            estoqueAnterior:
+                                estoqueAnterior,
+
+                            estoqueNovo:
+                                estoqueNovo
+
+                        };
+
+                    }
+                );
+
+
+                /* =================================
+                   SUCESSO
+                ================================= */
+
+                alert(
+                    `Entrada registrada com sucesso!\n\n` +
+
+                    `Produto: ${resultadoEntrada.nome}\n` +
+
+                    `Entrada: ${quantidade} ${resultadoEntrada.unidade}\n` +
+
+                    `Estoque anterior: ${resultadoEntrada.estoqueAnterior}\n` +
+
+                    `Novo estoque: ${resultadoEntrada.estoqueNovo}`
+                );
+
+
+                form.reset();
+
+
+                if (estoqueAtual) {
+
+                    estoqueAtual.textContent =
+                        "-";
+
+                }
+
+
+                if (unidadeProduto) {
+
+                    unidadeProduto.textContent =
+                        "-";
+
+                }
+
+
+                if (novoEstoque) {
+
+                    novoEstoque.textContent =
+                        "-";
+
+                }
+
+
+                await carregarProdutos();
+
+
+            } catch (erro) {
+
+                console.error(
+                    "Erro ao registrar entrada:",
+                    erro
+                );
+
+
+                alert(
+                    mensagemErroFirebaseGestok(erro)
+                );
+
+
+            } finally {
+
+                if (botao) {
+
+                    botao.disabled = false;
+
+                    botao.textContent =
+                        textoOriginal ||
+                        "↓ Registrar entrada";
+
+                }
+
+            }
 
         }
+    );
 
-
-        const quantidade =
-            Number(
-                quantidadeEntrada.value
-            );
-
-
-        /* =================================
-           VALIDAR QUANTIDADE
-        ================================= */
-
-        if (
-            !Number.isFinite(quantidade) ||
-            quantidade <= 0
-        ) {
-
-            alert(
-                "Informe uma quantidade válida para a entrada."
-            );
-
-            quantidadeEntrada.focus();
-
-            return;
-
-        }
-
-
-        /* =================================
-           OBTER PRODUTOS ATUAIS
-        ================================= */
-
-        const produtos =
-            obterProdutos();
-
-
-        const produtoAtual =
-            produtos.find(function (item) {
-
-                return item.id === produto.id;
-
-            });
-
-
-        if (!produtoAtual) {
-
-            alert(
-                "Produto não encontrado."
-            );
-
-            carregarProdutos();
-
-            return;
-
-        }
-
-
-        /* =================================
-           ESTOQUE ANTERIOR
-        ================================= */
-
-        const estoqueAnterior =
-            Number(
-                produtoAtual.quantidade || 0
-            );
-
-
-        /* =================================
-           NOVO ESTOQUE
-        ================================= */
-
-        const estoqueNovo =
-            estoqueAnterior +
-            quantidade;
-
-
-        produtoAtual.quantidade =
-            estoqueNovo;
-
-
-        /* =================================
-           DADOS DA MOVIMENTAÇÃO
-        ================================= */
-
-        const motivo =
-            document
-                .getElementById("motivo")
-                .value;
-
-        const observacao =
-            document
-                .getElementById("observacao")
-                .value
-                .trim();
-
-
-        /*
-         * Guardamos a última entrada
-         * no próprio produto.
-         *
-         * Depois podemos criar uma
-         * estrutura separada para
-         * histórico de movimentações.
-         */
-
-        produtoAtual.ultimaEntrada = {
-
-            quantidade:
-                quantidade,
-
-            estoqueAnterior:
-                estoqueAnterior,
-
-            estoqueNovo:
-                estoqueNovo,
-
-            motivo:
-                motivo,
-
-            observacao:
-                observacao,
-
-            data:
-                new Date().toISOString()
-
-        };
-
-
-        produtoAtual.dataAtualizacao =
-            new Date().toISOString();
-
-
-        /* =================================
-           REGISTRAR NO HISTÓRICO
-        ================================= */
-
-        const movimentacoesSalvas =
-            JSON.parse(localStorage.getItem(CHAVE_MOVIMENTACOES) || "[]");
-
-        movimentacoesSalvas.unshift({
-            id: Date.now(),
-            tipo: "Entrada",
-            produtoId: produtoAtual.id,
-            produto: produtoAtual.nome,
-            codigo: produtoAtual.codigo || "",
-            quantidade: quantidade,
-            unidade: produtoAtual.unidade || "UN",
-            estoqueAnterior: estoqueAnterior,
-            estoqueNovo: estoqueNovo,
-            motivo: motivo || "",
-            observacao: observacao || "",
-            data: new Date().toISOString()
-        });
-
-        localStorage.setItem(
-            CHAVE_MOVIMENTACOES,
-            JSON.stringify(movimentacoesSalvas)
-        );
-
-        /* =================================
-           SALVAR
-        ================================= */
-
-        salvarProdutos(produtos);
-
-
-        /* =================================
-           CONFIRMAÇÃO
-        ================================= */
-
-        alert(
-            `Entrada registrada com sucesso!\n\n` +
-            `Produto: ${produtoAtual.nome}\n` +
-            `Entrada: ${quantidade} ${produtoAtual.unidade || "UN"}\n` +
-            `Estoque anterior: ${estoqueAnterior}\n` +
-            `Novo estoque: ${estoqueNovo}`
-        );
-
-
-        /* =================================
-           LIMPAR FORMULÁRIO
-        ================================= */
-
-        form.reset();
-
-
-        estoqueAtual.textContent =
-            "-";
-
-        unidadeProduto.textContent =
-            "-";
-
-        novoEstoque.textContent =
-            "-";
-
-
-        carregarProdutos();
-
-    }
-);
+}
 
 
 /* =========================================
@@ -585,9 +962,35 @@ document.addEventListener(
     "DOMContentLoaded",
     function () {
 
-        carregarProdutos();
+        /*
+           Espera o Firebase terminar de restaurar
+           a sessão antes de buscar os produtos.
+        */
 
-        atualizarInformacoes();
+        observarAutenticacaoGestok(
+            async function (usuario) {
+
+                if (!usuario) {
+
+                    console.log(
+                        "Usuário não autenticado."
+                    );
+
+                    return;
+
+                }
+
+
+                console.log(
+                    "Usuário autenticado:",
+                    usuario.uid
+                );
+
+
+                await carregarProdutos();
+
+            }
+        );
 
     }
 );
