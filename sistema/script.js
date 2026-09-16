@@ -1671,7 +1671,35 @@ document.addEventListener(
 
 /* =========================================
    INICIALIZAÇÃO
+   -----------------------------------------
+   Aguarda o Firebase restaurar a sessão
+   antes de iniciar o listener do Firestore.
 ========================================= */
+
+let dashboardFirebaseInicializado = false;
+
+function iniciarDashboardComFirebase() {
+
+    if (dashboardFirebaseInicializado) {
+        return;
+    }
+
+    dashboardFirebaseInicializado = true;
+
+    atualizarData();
+
+    iniciarMonitoramentoProdutosDashboard();
+
+    atualizarMovimentacoesDashboard();
+
+    atualizarNumeroMovimentacoes();
+
+    atualizarNomeUsuario();
+
+    atualizarNotificacoes();
+
+}
+
 
 document.addEventListener(
     "DOMContentLoaded",
@@ -1679,15 +1707,43 @@ document.addEventListener(
 
         atualizarData();
 
-        iniciarMonitoramentoProdutosDashboard();
+        if (
+            typeof firebase !== "undefined" &&
+            firebase.auth
+        ) {
 
-        atualizarMovimentacoesDashboard();
+            firebase
+                .auth()
+                .onAuthStateChanged(
+                    function (usuario) {
 
-        atualizarNumeroMovimentacoes();
+                        if (!usuario) {
 
-        atualizarNomeUsuario();
+                            window.location.replace(
+                                caminhoLoginGestok()
+                            );
 
-        atualizarNotificacoes();
+                            return;
+
+                        }
+
+                        console.log(
+                            "Firebase confirmou usuário do Dashboard:",
+                            usuario.uid
+                        );
+
+                        iniciarDashboardComFirebase();
+
+                    }
+                );
+
+        } else {
+
+            console.error(
+                "Firebase Auth não está disponível no Dashboard."
+            );
+
+        }
 
     }
 );
