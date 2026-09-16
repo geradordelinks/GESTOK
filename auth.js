@@ -1,608 +1,1626 @@
 /* =========================================
-   GESTOK - AUTENTICAÇÃO FIREBASE
-   FIREBASE = ÚNICA AUTENTICAÇÃO
-   MULTI-LOJA / SAAS
+   GESTOK
+   AUTENTICAÇÃO CENTRAL
+   FIREBASE AUTH + FIRESTORE
 ========================================= */
 
-const GESTOK_CONTA = 'gestok_conta';
-const GESTOK_SESSAO = 'gestok_sessao';
-
-function obterContaGestok() {
-    try {
-        const conta = JSON.parse(localStorage.getItem(GESTOK_CONTA) || 'null');
-        return conta && typeof conta === 'object' ? conta : null;
-    } catch (erro) {
-        return null;
-    }
-}
-
-function obterSessaoGestok() {
-    try {
-        const sessao = JSON.parse(localStorage.getItem(GESTOK_SESSAO) || 'null');
-        return sessao && typeof sessao === 'object' ? sessao : null;
-    } catch (erro) {
-        return null;
-    }
-}
-
-function usuarioFirebaseAtualGestok() {
-    return (typeof firebase !== 'undefined' && firebase.auth)
-        ? firebase.auth().currentUser
-        : null;
-}
-
-function usuarioLogadoGestok() {
-    const usuario = usuarioFirebaseAtualGestok();
-    return !!usuario;
-}
-
-function pagamentoAprovadoGestok(conta) {
-    return !!(
-        conta?.assinatura?.status === 'ativa' &&
-        conta?.assinatura?.pagamento === 'aprovado'
-    );
-}
-
-function assinaturaAtivaGestok(conta) {
-    if (!pagamentoAprovadoGestok(conta)) return false;
-
-    const vencimento =
-        new Date(conta.assinatura.vencimento).getTime();
-
-    return Number.isFinite(vencimento) && vencimento > Date.now();
-}
-
-function caminhoSistemaGestok() {
-    return '../sistema/index.html';
-}
-
-function caminhoLoginGestok() {
-    return '../login/index.html';
-}
-
-function caminhoPagamentoGestok() {
-    return '../pagamento/index.html';
-}
-
-function exigirLoginGestok() {
-    const pagina = window.location.pathname.toLowerCase();
-
-    const paginasPublicas = [
-        '/login/index.html',
-        '/cadastro/index.html',
-        '/planos/index.html',
-        '/pagamento/index.html',
-        '/apresentacao.html',
-        '/index.html'
-    ];
-
-    if (paginasPublicas.some(item => pagina.endsWith(item))) {
-        return true;
-    }
-
-    const usuario = usuarioFirebaseAtualGestok();
-    const conta = obterContaGestok();
-
-    if (!usuario || !conta) {
-        window.location.replace(caminhoLoginGestok());
-        return false;
-    }
-
-    if (!pagamentoAprovadoGestok(conta)) {
-        window.location.replace(caminhoPagamentoGestok());
-        return false;
-    }
-
-    if (!assinaturaAtivaGestok(conta)) {
-        conta.assinatura = {
-            ...(conta.assinatura || {}),
-            status: 'expirada'
-        };
-
-        localStorage.setItem(
-            GESTOK_CONTA,
-            JSON.stringify(conta)
-        );
-
-        window.location.replace(caminhoPagamentoGestok());
-        return false;
-    }
-
-    return true;
-}
 
 /* =========================================
-   CADASTRO
+   CHAVES DE CACHE LOCAL
+   -----------------------------------------
+   IMPORTANTE:
+   localStorage NÃO é autenticação.
+   Serve apenas como espelho dos dados.
 ========================================= */
 
-async function criarContaGestok(nome, email, usuario, senha) {
+const GESTOK_CONTA = "gestok_conta";
+const GESTOK_SESSAO = "gestok_sessao";
+
+
+/* =========================================
+   OBTER CONTA LOCAL
+========================================= */
+
+function obterContaGestok() {
+
     try {
-        nome = String(nome || '').trim();
-        email = String(email || '').trim().toLowerCase();
-        usuario = String(usuario || '').trim().toLowerCase();
-        senha = String(senha || '');
 
-        if (!nome) {
-            return { ok: false, mensagem: 'Digite o nome da empresa.' };
-        }
-
-        if (!email) {
-            return { ok: false, mensagem: 'Digite seu e-mail.' };
-        }
-
-        if (!usuario) {
-            return { ok: false, mensagem: 'Digite um nome de usuário.' };
-        }
-
-        if (senha.length < 6) {
-            return { ok: false, mensagem: 'A senha precisa ter pelo menos 6 caracteres.' };
-        }
-
-        if (typeof firebase === 'undefined') {
-            return { ok: false, mensagem: 'Firebase não foi carregado.' };
-        }
-
-        const authFirebase = firebase.auth();
-        const dbFirebase = firebase.firestore();
-
-        /*
-         * O e-mail real é usado pelo Firebase Authentication.
-         * O usuário e o Código da Loja continuam sendo a forma
-         * de identificação exibida pelo Gestok.
-         */
-        const credencial =
-            await authFirebase.createUserWithEmailAndPassword(
-                email,
-                senha
+        const dados =
+            localStorage.getItem(
+                GESTOK_CONTA
             );
 
-        const usuarioFirebase = credencial.user;
-
-        if (!usuarioFirebase || !usuarioFirebase.uid) {
-            throw new Error('Firebase não retornou o UID do usuário.');
+        if (!dados) {
+            return null;
         }
 
-        const uid = usuarioFirebase.uid;
+        const conta =
+            JSON.parse(dados);
 
-        /* =====================================
-           CRIAR LOJA
-        ===================================== */
-
-        const lojaRef = dbFirebase
-            .collection('lojas')
-            .doc();
-
-        const codigoLoja =
-            await gerarCodigoLojaGestok(dbFirebase);
-
-        const agora =
-            firebase.firestore.FieldValue.serverTimestamp();
-
-        await lojaRef.set({
-            id: lojaRef.id,
-            nome,
-            codigo: codigoLoja,
-            donoUid: uid,
-            email,
-            criadaEm: agora,
-            ativo: true,
-            assinatura: {
-                plano: 'Gestok',
-                valor: 30,
-                dias: 30,
-                inicio: null,
-                vencimento: null,
-                status: 'aguardando_pagamento',
-                pagamento: 'pendente'
-            }
-        });
-
-        /* =====================================
-           CRIAR USUÁRIO DA LOJA
-        ===================================== */
-
-        await lojaRef
-            .collection('usuarios')
-            .doc(uid)
-            .set({
-                uid,
-                lojaId: lojaRef.id,
-                codigoLoja,
-                nome,
-                email,
-                usuario,
-                perfil: 'proprietario',
-                ativo: true,
-                criadoEm: agora
-            });
-
-        /* =====================================
-           ÍNDICE DE LOGIN
-        ===================================== */
-
-        await dbFirebase
-            .collection('acessos')
-            .doc(`${codigoLoja}_${usuario}`)
-            .set({
-                lojaId: lojaRef.id,
-                uid,
-                codigoLoja,
-                usuario,
-                emailAuth: email
-            });
-
-        const conta = {
-            firebaseUid: uid,
-            lojaId: lojaRef.id,
-            nome,
-            email,
-            usuario,
-            codigoLoja,
-            criadaEm: new Date().toISOString(),
-            assinatura: {
-                plano: 'Gestok',
-                valor: 30,
-                dias: 30,
-                inicio: null,
-                vencimento: null,
-                status: 'aguardando_pagamento',
-                pagamento: 'pendente'
-            }
-        };
-
-        localStorage.setItem(
-            GESTOK_CONTA,
-            JSON.stringify(conta)
-        );
-
-        localStorage.setItem(
-            GESTOK_SESSAO,
-            JSON.stringify({
-                logado: true,
-                codigoLoja,
-                usuario,
-                lojaId: lojaRef.id,
-                firebaseUid: uid,
-                loginEm: new Date().toISOString()
-            })
-        );
-
-        return {
-            ok: true,
-            conta
-        };
+        return (
+            conta &&
+            typeof conta === "object"
+        )
+            ? conta
+            : null;
 
     } catch (erro) {
+
         console.error(
-            'Erro ao criar conta Gestok:',
+            "Erro ao carregar conta local:",
             erro
         );
 
-        return {
-            ok: false,
-            mensagem: mensagemErroFirebase(erro)
-        };
+        return null;
+
     }
+
 }
+
+
+/* =========================================
+   OBTER SESSÃO LOCAL
+========================================= */
+
+function obterSessaoGestok() {
+
+    try {
+
+        const dados =
+            localStorage.getItem(
+                GESTOK_SESSAO
+            );
+
+        if (!dados) {
+            return null;
+        }
+
+        const sessao =
+            JSON.parse(dados);
+
+        return (
+            sessao &&
+            typeof sessao === "object"
+        )
+            ? sessao
+            : null;
+
+    } catch (erro) {
+
+        return null;
+
+    }
+
+}
+
+
+/* =========================================
+   USUÁRIO FIREBASE ATUAL
+========================================= */
+
+function usuarioFirebaseAtualGestok() {
+
+    if (
+        typeof firebase === "undefined" ||
+        !firebase.auth
+    ) {
+
+        return null;
+
+    }
+
+    return (
+        firebase.auth().currentUser ||
+        null
+    );
+
+}
+
+
+/* =========================================
+   UID FIREBASE ATUAL
+========================================= */
+
+function uidFirebaseAtualGestok() {
+
+    const usuario =
+        usuarioFirebaseAtualGestok();
+
+    return usuario
+        ? usuario.uid
+        : null;
+
+}
+
+
+/* =========================================
+   VERIFICAR AUTENTICAÇÃO FIREBASE
+========================================= */
+
+function usuarioLogadoGestok() {
+
+    return Boolean(
+        usuarioFirebaseAtualGestok()
+    );
+
+}
+
+
+/* =========================================
+   OBSERVAR AUTENTICAÇÃO
+========================================= */
+
+function observarAutenticacaoGestok(callback) {
+
+    if (
+        typeof firebase === "undefined" ||
+        !firebase.auth
+    ) {
+
+        return null;
+
+    }
+
+    return firebase
+        .auth()
+        .onAuthStateChanged(
+            function (usuario) {
+
+                if (typeof callback === "function") {
+
+                    callback(usuario);
+
+                }
+
+            }
+        );
+
+}
+
 
 /* =========================================
    GERAR CÓDIGO DA LOJA
 ========================================= */
 
-async function gerarCodigoLojaGestok(db) {
-    for (let tentativa = 0; tentativa < 30; tentativa++) {
-        const codigo = String(
-            Math.floor(1000 + Math.random() * 9000)
+async function gerarCodigoLojaGestok() {
+
+    if (
+        typeof firebase === "undefined" ||
+        !firebase.firestore
+    ) {
+
+        throw new Error(
+            "Firebase Firestore não foi carregado."
         );
 
-        const resultado = await db
-            .collection('lojas')
-            .where('codigo', '==', codigo)
-            .limit(1)
-            .get();
-
-        if (resultado.empty) {
-            return codigo;
-        }
     }
 
+
+    const db =
+        firebase.firestore();
+
+
+    for (let tentativa = 0; tentativa < 20; tentativa++) {
+
+        const codigo =
+            String(
+                Math.floor(
+                    1000 +
+                    Math.random() * 9000
+                )
+            );
+
+
+        const consulta =
+            await db
+                .collection("lojas")
+                .where(
+                    "codigo",
+                    "==",
+                    codigo
+                )
+                .limit(1)
+                .get();
+
+
+        if (consulta.empty) {
+
+            return codigo;
+
+        }
+
+    }
+
+
     throw new Error(
-        'Não foi possível gerar um Código da Loja disponível.'
+        "Não foi possível gerar um código de loja disponível."
     );
+
 }
+
+
+/* =========================================
+   PAGAMENTO APROVADO
+========================================= */
+
+function pagamentoAprovadoGestok(
+    conta = obterContaGestok()
+) {
+
+    if (
+        !conta ||
+        !conta.assinatura
+    ) {
+
+        return false;
+
+    }
+
+
+    return (
+
+        conta.assinatura.status === "ativa" &&
+
+        conta.assinatura.pagamento === "aprovado"
+
+    );
+
+}
+
+
+/* =========================================
+   ASSINATURA ATIVA
+========================================= */
+
+function assinaturaAtivaGestok(
+    conta = obterContaGestok()
+) {
+
+    if (
+        !pagamentoAprovadoGestok(conta)
+    ) {
+
+        return false;
+
+    }
+
+
+    if (
+        !conta.assinatura.vencimento
+    ) {
+
+        return false;
+
+    }
+
+
+    const vencimento =
+        new Date(
+            conta.assinatura.vencimento
+        ).getTime();
+
+
+    return (
+
+        Number.isFinite(vencimento) &&
+
+        vencimento > Date.now()
+
+    );
+
+}
+
+
+/* =========================================
+   CRIAR CONTA
+========================================= */
+
+async function criarContaGestok(
+
+    nome,
+
+    email,
+
+    usuario,
+
+    senha
+
+) {
+
+    nome =
+        String(nome || "")
+            .trim();
+
+    email =
+        String(email || "")
+            .trim()
+            .toLowerCase();
+
+    usuario =
+        String(usuario || "")
+            .trim()
+            .toLowerCase();
+
+    senha =
+        String(senha || "");
+
+
+    /* -----------------------------------------
+       VALIDAÇÕES
+    ----------------------------------------- */
+
+    if (!nome) {
+
+        return {
+
+            ok: false,
+
+            mensagem:
+                "Digite o nome da empresa."
+
+        };
+
+    }
+
+
+    if (!email) {
+
+        return {
+
+            ok: false,
+
+            mensagem:
+                "Digite seu e-mail."
+
+        };
+
+    }
+
+
+    if (!usuario) {
+
+        return {
+
+            ok: false,
+
+            mensagem:
+                "Digite um nome de usuário."
+
+        };
+
+    }
+
+
+    if (senha.length < 6) {
+
+        return {
+
+            ok: false,
+
+            mensagem:
+                "A senha precisa ter pelo menos 6 caracteres."
+
+        };
+
+    }
+
+
+    if (
+        typeof firebase === "undefined" ||
+        !firebase.auth ||
+        !firebase.firestore
+    ) {
+
+        return {
+
+            ok: false,
+
+            mensagem:
+                "Firebase não foi carregado corretamente."
+
+        };
+
+    }
+
+
+    let usuarioFirebase =
+        null;
+
+
+    try {
+
+        /* =====================================
+           1. CRIAR USUÁRIO NO FIREBASE AUTH
+        ===================================== */
+
+        const credencial =
+            await firebase
+                .auth()
+                .createUserWithEmailAndPassword(
+                    email,
+                    senha
+                );
+
+
+        usuarioFirebase =
+            credencial.user;
+
+
+        if (
+            !usuarioFirebase ||
+            !usuarioFirebase.uid
+        ) {
+
+            throw new Error(
+                "O Firebase não retornou o UID do usuário."
+            );
+
+        }
+
+
+        /* =====================================
+           UID REAL DO FIREBASE
+        ===================================== */
+
+        const uid =
+            usuarioFirebase.uid;
+
+
+        console.log(
+            "Usuário Firebase criado:",
+            uid
+        );
+
+
+        /* =====================================
+           2. FIRESTORE
+        ===================================== */
+
+        const db =
+            firebase.firestore();
+
+
+        /* =====================================
+           3. GERAR CÓDIGO DA LOJA
+        ===================================== */
+
+        const codigoLoja =
+            await gerarCodigoLojaGestok();
+
+
+        /* =====================================
+           4. CRIAR DOCUMENTO DA LOJA
+        ===================================== */
+
+        const lojaRef =
+            db
+                .collection("lojas")
+                .doc();
+
+
+        const agora =
+            firebase.firestore.FieldValue
+                .serverTimestamp();
+
+
+        await lojaRef.set({
+
+            nome:
+                nome,
+
+            codigo:
+                codigoLoja,
+
+            donoUid:
+                uid,
+
+            email:
+                email,
+
+            criadaEm:
+                agora,
+
+            assinatura: {
+
+                plano:
+                    "Gestok",
+
+                valor:
+                    30,
+
+                dias:
+                    30,
+
+                inicio:
+                    null,
+
+                vencimento:
+                    null,
+
+                status:
+                    "aguardando_pagamento",
+
+                pagamento:
+                    "pendente"
+
+            }
+
+        });
+
+
+        console.log(
+            "Loja criada:",
+            lojaRef.id
+        );
+
+
+        /* =====================================
+           5. CRIAR USUÁRIO DENTRO DA LOJA
+        ===================================== */
+
+        await lojaRef
+            .collection("usuarios")
+            .doc(uid)
+            .set({
+
+                uid:
+                    uid,
+
+                lojaId:
+                    lojaRef.id,
+
+                codigoLoja:
+                    codigoLoja,
+
+                nome:
+                    nome,
+
+                email:
+                    email,
+
+                usuario:
+                    usuario,
+
+                perfil:
+                    "proprietario",
+
+                criadoEm:
+                    agora
+
+            });
+
+
+        /* =====================================
+           6. CRIAR ÍNDICE DE LOGIN
+        ===================================== */
+
+        await db
+            .collection("acessos")
+            .doc(
+                `${codigoLoja}_${usuario}`
+            )
+            .set({
+
+                lojaId:
+                    lojaRef.id,
+
+                uid:
+                    uid,
+
+                codigoLoja:
+                    codigoLoja,
+
+                usuario:
+                    usuario,
+
+                emailAuth:
+                    email
+
+            });
+
+
+        /* =====================================
+           7. ESPELHO LOCAL
+           NÃO É AUTENTICAÇÃO
+        ===================================== */
+
+        const conta = {
+
+            firebaseUid:
+                uid,
+
+            lojaId:
+                lojaRef.id,
+
+            nome:
+                nome,
+
+            email:
+                email,
+
+            usuario:
+                usuario,
+
+            codigoLoja:
+                codigoLoja,
+
+            assinatura: {
+
+                plano:
+                    "Gestok",
+
+                valor:
+                    30,
+
+                dias:
+                    30,
+
+                inicio:
+                    null,
+
+                vencimento:
+                    null,
+
+                status:
+                    "aguardando_pagamento",
+
+                pagamento:
+                    "pendente"
+
+            },
+
+            criadaEm:
+                new Date().toISOString()
+
+        };
+
+
+        localStorage.setItem(
+
+            GESTOK_CONTA,
+
+            JSON.stringify(conta)
+
+        );
+
+
+        localStorage.setItem(
+
+            GESTOK_SESSAO,
+
+            JSON.stringify({
+
+                logado:
+                    true,
+
+                firebaseUid:
+                    uid,
+
+                lojaId:
+                    lojaRef.id,
+
+                codigoLoja:
+                    codigoLoja,
+
+                usuario:
+                    usuario,
+
+                loginEm:
+                    new Date().toISOString()
+
+            })
+
+        );
+
+
+        /* =====================================
+           SUCESSO
+        ===================================== */
+
+        return {
+
+            ok: true,
+
+            conta:
+                conta,
+
+            usuario:
+                usuarioFirebase
+
+        };
+
+
+    } catch (erro) {
+
+        console.error(
+            "Erro ao criar conta Gestok:",
+            erro
+        );
+
+
+        /* =====================================
+           SE FIRESTORE FALHAR DEPOIS DO AUTH,
+           REMOVE O USUÁRIO CRIADO
+        ===================================== */
+
+        if (
+            usuarioFirebase &&
+            usuarioFirebase.uid
+        ) {
+
+            try {
+
+                await usuarioFirebase.delete();
+
+                console.log(
+                    "Usuário Firebase removido após falha."
+                );
+
+            } catch (erroDelete) {
+
+                console.error(
+                    "Não foi possível remover usuário Firebase:",
+                    erroDelete
+                );
+
+            }
+
+        }
+
+
+        return {
+
+            ok: false,
+
+            mensagem:
+                mensagemErroFirebaseGestok(
+                    erro
+                ),
+
+            erro:
+                erro
+
+        };
+
+    }
+
+}
+
 
 /* =========================================
    LOGIN
+   CÓDIGO DA LOJA + USUÁRIO + SENHA
 ========================================= */
 
-async function entrarGestok(codigoLoja, usuario, senha) {
-    try {
-        codigoLoja = String(codigoLoja || '').trim();
-        usuario = String(usuario || '').trim().toLowerCase();
-        senha = String(senha || '');
+async function entrarGestok(
 
-        if (!codigoLoja || !usuario || !senha) {
-            return {
-                ok: false,
-                mensagem: 'Preencha todos os dados de acesso.'
-            };
-        }
+    codigoLoja,
 
-        const dbFirebase = firebase.firestore();
-        const authFirebase = firebase.auth();
+    usuario,
 
-        const chave = `${codigoLoja}_${usuario}`;
+    senha
 
-        const acessoDoc = await dbFirebase
-            .collection('acessos')
-            .doc(chave)
-            .get();
+) {
 
-        if (!acessoDoc.exists) {
-            return {
-                ok: false,
-                mensagem: 'Código da Loja ou usuário incorreto.'
-            };
-        }
+    codigoLoja =
+        String(codigoLoja || "")
+            .trim();
 
-        const acesso = acessoDoc.data();
+    usuario =
+        String(usuario || "")
+            .trim()
+            .toLowerCase();
 
-        if (!acesso?.lojaId || !acesso?.uid || !acesso?.emailAuth) {
-            return {
-                ok: false,
-                mensagem: 'Cadastro de acesso inválido.'
-            };
-        }
+    senha =
+        String(senha || "");
 
-        const lojaDoc = await dbFirebase
-            .collection('lojas')
-            .doc(acesso.lojaId)
-            .get();
 
-        if (!lojaDoc.exists) {
-            return {
-                ok: false,
-                mensagem: 'Loja não encontrada.'
-            };
-        }
-
-        const contaLoja = lojaDoc.data();
-
-        const credencial =
-            await authFirebase.signInWithEmailAndPassword(
-                acesso.emailAuth,
-                senha
-            );
-
-        const usuarioFirebase = credencial.user;
-
-        if (!usuarioFirebase || usuarioFirebase.uid !== acesso.uid) {
-            await authFirebase.signOut();
-            return {
-                ok: false,
-                mensagem: 'Não foi possível validar o usuário da loja.'
-            };
-        }
-
-        const conta = {
-            firebaseUid: usuarioFirebase.uid,
-            lojaId: acesso.lojaId,
-            nome: contaLoja.nome || '',
-            email: contaLoja.email || acesso.emailAuth,
-            usuario,
-            codigoLoja,
-            assinatura: contaLoja.assinatura || {
-                plano: 'Gestok',
-                valor: 30,
-                dias: 30,
-                inicio: null,
-                vencimento: null,
-                status: 'aguardando_pagamento',
-                pagamento: 'pendente'
-            }
-        };
-
-        localStorage.setItem(
-            GESTOK_CONTA,
-            JSON.stringify(conta)
-        );
-
-        localStorage.setItem(
-            GESTOK_SESSAO,
-            JSON.stringify({
-                logado: true,
-                codigoLoja,
-                usuario,
-                lojaId: acesso.lojaId,
-                firebaseUid: usuarioFirebase.uid,
-                loginEm: new Date().toISOString()
-            })
-        );
+    if (!codigoLoja) {
 
         return {
-            ok: true,
-            conta
+
+            ok: false,
+
+            mensagem:
+                "Digite o código da loja."
+
         };
 
+    }
+
+
+    if (!usuario) {
+
+        return {
+
+            ok: false,
+
+            mensagem:
+                "Digite o usuário."
+
+        };
+
+    }
+
+
+    if (!senha) {
+
+        return {
+
+            ok: false,
+
+            mensagem:
+                "Digite a senha."
+
+        };
+
+    }
+
+
+    try {
+
+        const db =
+            firebase.firestore();
+
+
+        /* =====================================
+           1. LOCALIZAR ACESSO
+        ===================================== */
+
+        const acessoRef =
+            db
+                .collection("acessos")
+                .doc(
+                    `${codigoLoja}_${usuario}`
+                );
+
+
+        const acessoSnap =
+            await acessoRef.get();
+
+
+        if (!acessoSnap.exists) {
+
+            return {
+
+                ok: false,
+
+                mensagem:
+                    "Código da Loja ou usuário incorreto."
+
+            };
+
+        }
+
+
+        const acesso =
+            acessoSnap.data();
+
+
+        if (
+            !acesso.emailAuth ||
+            !acesso.uid ||
+            !acesso.lojaId
+        ) {
+
+            return {
+
+                ok: false,
+
+                mensagem:
+                    "Dados de acesso da conta estão incompletos."
+
+            };
+
+        }
+
+
+        /* =====================================
+           2. LOGIN REAL NO FIREBASE AUTH
+        ===================================== */
+
+        const usuarioFirebase =
+            await firebase
+                .auth()
+                .signInWithEmailAndPassword(
+
+                    acesso.emailAuth,
+
+                    senha
+
+                );
+
+
+        const user =
+            usuarioFirebase.user;
+
+
+        if (!user) {
+
+            return {
+
+                ok: false,
+
+                mensagem:
+                    "Não foi possível autenticar."
+
+            };
+
+        }
+
+
+        /* =====================================
+           3. CONFERIR UID
+        ===================================== */
+
+        if (
+            user.uid !== acesso.uid
+        ) {
+
+            await firebase
+                .auth()
+                .signOut();
+
+
+            return {
+
+                ok: false,
+
+                mensagem:
+                    "A conta autenticada não corresponde à loja informada."
+
+            };
+
+        }
+
+
+        /* =====================================
+           4. BUSCAR LOJA
+        ===================================== */
+
+        const lojaSnap =
+            await db
+                .collection("lojas")
+                .doc(
+                    acesso.lojaId
+                )
+                .get();
+
+
+        if (!lojaSnap.exists) {
+
+            await firebase
+                .auth()
+                .signOut();
+
+
+            return {
+
+                ok: false,
+
+                mensagem:
+                    "Loja não encontrada."
+
+            };
+
+        }
+
+
+        const loja =
+            lojaSnap.data();
+
+
+        /* =====================================
+           5. CONFERIR DONO DA LOJA
+        ===================================== */
+
+        if (
+            loja.donoUid !== user.uid
+        ) {
+
+            await firebase
+                .auth()
+                .signOut();
+
+
+            return {
+
+                ok: false,
+
+                mensagem:
+                    "Acesso não autorizado para esta loja."
+
+            };
+
+        }
+
+
+        /* =====================================
+           6. MONTAR CONTA LOCAL
+        ===================================== */
+
+        const conta = {
+
+            firebaseUid:
+                user.uid,
+
+            lojaId:
+                acesso.lojaId,
+
+            nome:
+                loja.nome || "",
+
+            email:
+                user.email || acesso.emailAuth,
+
+            usuario:
+                acesso.usuario,
+
+            codigoLoja:
+                acesso.codigoLoja,
+
+            assinatura:
+                loja.assinatura || {
+
+                    plano:
+                        "Gestok",
+
+                    valor:
+                        30,
+
+                    dias:
+                        30,
+
+                    inicio:
+                        null,
+
+                    vencimento:
+                        null,
+
+                    status:
+                        "aguardando_pagamento",
+
+                    pagamento:
+                        "pendente"
+
+                }
+
+        };
+
+
+        localStorage.setItem(
+
+            GESTOK_CONTA,
+
+            JSON.stringify(conta)
+
+        );
+
+
+        localStorage.setItem(
+
+            GESTOK_SESSAO,
+
+            JSON.stringify({
+
+                logado:
+                    true,
+
+                firebaseUid:
+                    user.uid,
+
+                lojaId:
+                    acesso.lojaId,
+
+                codigoLoja:
+                    acesso.codigoLoja,
+
+                usuario:
+                    acesso.usuario,
+
+                loginEm:
+                    new Date().toISOString()
+
+            })
+
+        );
+
+
+        return {
+
+            ok: true,
+
+            conta:
+                conta,
+
+            usuario:
+                user
+
+        };
+
+
     } catch (erro) {
+
         console.error(
-            'Erro no login Gestok:',
+            "Erro ao entrar no Gestok:",
             erro
         );
 
+
         return {
+
             ok: false,
-            mensagem: mensagemErroFirebase(erro)
+
+            mensagem:
+                mensagemErroFirebaseGestok(
+                    erro
+                ),
+
+            erro:
+                erro
+
         };
+
     }
+
 }
 
+
 /* =========================================
-   PAGAMENTO / ASSINATURA
+   APROVAR PAGAMENTO
+   -----------------------------------------
+   TEMPORÁRIO PARA TESTE.
+   O PAGAMENTO REAL DEVERÁ SER CONFIRMADO
+   PELO BACKEND/WEBHOOK.
 ========================================= */
 
 async function aprovarPagamentoGestok() {
-    try {
-        const conta = obterContaGestok();
 
-        if (!conta?.lojaId) {
-            return {
-                ok: false,
-                mensagem: 'Conta ou loja não encontrada.'
-            };
-        }
+    const conta =
+        obterContaGestok();
 
-        const agora = new Date();
-        const vencimento = new Date(agora);
-        vencimento.setDate(vencimento.getDate() + 30);
 
-        const assinatura = {
-            ...(conta.assinatura || {}),
-            inicio: agora.toISOString(),
-            vencimento: vencimento.toISOString(),
-            status: 'ativa',
-            pagamento: 'aprovado'
-        };
+    const usuarioFirebase =
+        usuarioFirebaseAtualGestok();
 
-        await atualizarAssinaturaLojaGestok(
-            conta.lojaId,
-            assinatura
-        );
 
-        conta.assinatura = assinatura;
-
-        localStorage.setItem(
-            GESTOK_CONTA,
-            JSON.stringify(conta)
-        );
-
-        localStorage.setItem(
-            GESTOK_SESSAO,
-            JSON.stringify({
-                logado: true,
-                codigoLoja: conta.codigoLoja,
-                usuario: conta.usuario,
-                lojaId: conta.lojaId,
-                firebaseUid: conta.firebaseUid,
-                loginEm: agora.toISOString()
-            })
-        );
+    if (!usuarioFirebase) {
 
         return {
-            ok: true,
-            conta
+
+            ok: false,
+
+            mensagem:
+                "Usuário não autenticado no Firebase."
+
         };
 
+    }
+
+
+    if (!conta) {
+
+        return {
+
+            ok: false,
+
+            mensagem:
+                "Conta Gestok não encontrada."
+
+        };
+
+    }
+
+
+    if (!conta.lojaId) {
+
+        return {
+
+            ok: false,
+
+            mensagem:
+                "Loja não identificada."
+
+        };
+
+    }
+
+
+    try {
+
+        const db =
+            firebase.firestore();
+
+
+        const agora =
+            new Date();
+
+
+        const vencimento =
+            new Date(
+                agora
+            );
+
+
+        vencimento.setDate(
+            vencimento.getDate() + 30
+        );
+
+
+        const assinatura = {
+
+            plano:
+                "Gestok",
+
+            valor:
+                30,
+
+            dias:
+                30,
+
+            inicio:
+                agora.toISOString(),
+
+            vencimento:
+                vencimento.toISOString(),
+
+            status:
+                "ativa",
+
+            pagamento:
+                "aprovado"
+
+        };
+
+
+        /* =====================================
+           ATUALIZAR FIRESTORE
+        ===================================== */
+
+        await db
+            .collection("lojas")
+            .doc(
+                conta.lojaId
+            )
+            .update({
+
+                assinatura:
+                    assinatura
+
+            });
+
+
+        /* =====================================
+           ATUALIZAR ESPELHO LOCAL
+        ===================================== */
+
+        conta.assinatura =
+            assinatura;
+
+
+        localStorage.setItem(
+
+            GESTOK_CONTA,
+
+            JSON.stringify(conta)
+
+        );
+
+
+        return {
+
+            ok: true,
+
+            conta:
+                conta
+
+        };
+
+
     } catch (erro) {
+
         console.error(
-            'Erro ao aprovar pagamento:',
+            "Erro ao aprovar pagamento:",
             erro
         );
 
+
         return {
+
             ok: false,
-            mensagem: mensagemErroFirebase(erro)
+
+            mensagem:
+                mensagemErroFirebaseGestok(
+                    erro
+                ),
+
+            erro:
+                erro
+
         };
+
     }
+
 }
 
-async function atualizarAssinaturaLojaGestok(lojaId, assinatura) {
-    const usuario = usuarioFirebaseAtualGestok();
+
+/* =========================================
+   EXIGIR LOGIN
+   -----------------------------------------
+   IMPORTANTE:
+   FIREBASE AUTH É A AUTORIDADE.
+========================================= */
+
+function exigirLoginGestok() {
+
+    const usuario =
+        usuarioFirebaseAtualGestok();
+
+
+    const pagina =
+        window.location.pathname
+            .toLowerCase();
+
+
+    const paginasPublicas = [
+
+        "/login/index.html",
+
+        "/cadastro/index.html",
+
+        "/planos/index.html",
+
+        "/apresentacao.html",
+
+        "/index.html"
+
+    ];
+
+
+    const paginaPublica =
+        paginasPublicas.some(
+
+            function (item) {
+
+                return pagina.endsWith(item);
+
+            }
+
+        );
+
+
+    if (paginaPublica) {
+
+        return true;
+
+    }
+
+
+    /* -----------------------------------------
+       SEM FIREBASE AUTH
+    ----------------------------------------- */
 
     if (!usuario) {
-        throw new Error('Usuário não autenticado no Firebase.');
+
+        window.location.replace(
+            caminhoLoginGestok()
+        );
+
+        return false;
+
     }
 
-    await firebase
-        .firestore()
-        .collection('lojas')
-        .doc(lojaId)
-        .update({
-            assinatura
-        });
+
+    return true;
+
 }
+
+
+/* =========================================
+   CAMINHO DO SISTEMA
+========================================= */
+
+function caminhoSistemaGestok() {
+
+    return "../sistema/index.html";
+
+}
+
+
+/* =========================================
+   CAMINHO DO LOGIN
+========================================= */
+
+function caminhoLoginGestok() {
+
+    return "../login/index.html";
+
+}
+
+
+/* =========================================
+   CAMINHO DO PAGAMENTO
+========================================= */
+
+function caminhoPagamentoGestok() {
+
+    return "../pagamento/index.html";
+
+}
+
 
 /* =========================================
    SAIR
 ========================================= */
 
 async function sairGestok() {
+
     try {
-        await firebase.auth().signOut();
+
+        await firebase
+            .auth()
+            .signOut();
+
     } catch (erro) {
-        console.warn(
-            'Erro ao encerrar sessão Firebase:',
+
+        console.error(
+            "Erro ao sair do Firebase:",
             erro
         );
+
     }
 
-    localStorage.removeItem(GESTOK_SESSAO);
-    localStorage.removeItem(GESTOK_CONTA);
 
-    window.location.href = caminhoLoginGestok();
+    localStorage.removeItem(
+        GESTOK_SESSAO
+    );
+
+    localStorage.removeItem(
+        GESTOK_CONTA
+    );
+
+
+    window.location.href =
+        caminhoLoginGestok();
+
 }
+
 
 /* =========================================
    DIAS RESTANTES
 ========================================= */
 
 function diasRestantesGestok(
-    conta = obterContaGestok()
+
+    conta =
+        obterContaGestok()
+
 ) {
-    if (!conta?.assinatura?.vencimento) {
+
+    if (
+
+        !conta ||
+
+        !conta.assinatura ||
+
+        !conta.assinatura.vencimento
+
+    ) {
+
         return 0;
+
     }
 
+
+    const vencimento =
+        new Date(
+            conta.assinatura.vencimento
+        ).getTime();
+
+
+    if (
+        !Number.isFinite(vencimento)
+    ) {
+
+        return 0;
+
+    }
+
+
     const diferenca =
-        new Date(conta.assinatura.vencimento).getTime() -
+        vencimento -
         Date.now();
 
+
     return Math.max(
+
         0,
-        Math.ceil(diferenca / 86400000)
+
+        Math.ceil(
+            diferenca /
+            86400000
+        )
+
     );
+
 }
 
+
 /* =========================================
-   ERROS FIREBASE
+   MENSAGENS DE ERRO FIREBASE
 ========================================= */
 
-function mensagemErroFirebase(erro) {
-    const mapa = {
-        'auth/email-already-in-use':
-            'Este e-mail já está cadastrado.',
+function mensagemErroFirebaseGestok(
+    erro
+) {
 
-        'auth/invalid-email':
-            'O e-mail informado é inválido.',
+    if (!erro) {
 
-        'auth/weak-password':
-            'A senha precisa ter pelo menos 6 caracteres.',
+        return "Ocorreu um erro inesperado.";
 
-        'auth/user-not-found':
-            'Código da Loja ou usuário incorreto.',
+    }
 
-        'auth/wrong-password':
-            'Senha incorreta.',
 
-        'auth/invalid-credential':
-            'Código da Loja, usuário ou senha incorretos.',
+    const codigo =
+        erro.code || "";
 
-        'auth/too-many-requests':
-            'Muitas tentativas. Aguarde alguns instantes e tente novamente.',
 
-        'auth/network-request-failed':
-            'Falha de conexão. Verifique sua internet.',
+    const mensagens = {
 
-        'auth/operation-not-allowed':
-            'O login por e-mail e senha não está ativado no Firebase.',
+        "auth/email-already-in-use":
+            "Este e-mail já está cadastrado no Firebase.",
 
-        'permission-denied':
-            'O Firestore bloqueou esta operação pelas regras de segurança.'
+        "auth/invalid-email":
+            "O e-mail informado é inválido.",
+
+        "auth/weak-password":
+            "A senha é muito fraca.",
+
+        "auth/user-not-found":
+            "Usuário não encontrado.",
+
+        "auth/wrong-password":
+            "Senha incorreta.",
+
+        "auth/invalid-credential":
+            "Código, usuário ou senha incorretos.",
+
+        "auth/too-many-requests":
+            "Muitas tentativas. Aguarde alguns minutos e tente novamente.",
+
+        "auth/network-request-failed":
+            "Falha de conexão com o Firebase.",
+
+        "auth/operation-not-allowed":
+            "O método de login por e-mail e senha não está habilitado no Firebase.",
+
+        "permission-denied":
+            "O Firebase bloqueou o acesso ao Firestore pelas regras de segurança.",
+
+        "failed-precondition":
+            "O Firebase recusou a operação por uma condição não atendida."
+
     };
 
-    return (
-        mapa[erro?.code] ||
-        erro?.message ||
-        'Não foi possível concluir a operação. Tente novamente.'
-    );
+
+    if (
+        mensagens[codigo]
+    ) {
+
+        return mensagens[codigo];
+
+    }
+
+
+    if (
+        erro.message
+    ) {
+
+        return erro.message;
+
+    }
+
+
+    return "Ocorreu um erro ao processar a operação.";
+
 }
