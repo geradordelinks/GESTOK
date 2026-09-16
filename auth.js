@@ -1,881 +1,236 @@
 /* =========================================
-   GESTOK - AUTENTICAÇÃO
-   CÓDIGO DA LOJA + USUÁRIO + SENHA
+   GESTOK - AUTENTICAÇÃO FIREBASE
+   MULTI-LOJA / SAAS
 ========================================= */
 
-const GESTOK_CONTA = "gestok_conta";
-const GESTOK_SESSAO = "gestok_sessao";
-
-const GESTOK_PROXIMO_CODIGO_LOJA =
-    "gestok_proximo_codigo_loja";
-
-
-/* =========================================
-   OBTER CONTA
-========================================= */
+const GESTOK_CONTA = 'gestok_conta';
+const GESTOK_SESSAO = 'gestok_sessao';
+const GESTOK_PROXIMO_CODIGO_LOJA = 'gestok_proximo_codigo_loja';
 
 function obterContaGestok() {
-
     try {
-
-        const conta = JSON.parse(
-            localStorage.getItem(GESTOK_CONTA) || "null"
-        );
-
-        return conta &&
-            typeof conta === "object"
-            ? conta
-            : null;
-
+        const conta = JSON.parse(localStorage.getItem(GESTOK_CONTA) || 'null');
+        return conta && typeof conta === 'object' ? conta : null;
     } catch (erro) {
-
-        console.error(
-            "Erro ao carregar conta:",
-            erro
-        );
-
         return null;
-
     }
-
 }
-
-
-/* =========================================
-   OBTER SESSÃO
-========================================= */
 
 function obterSessaoGestok() {
-
     try {
-
-        const sessao = JSON.parse(
-            localStorage.getItem(GESTOK_SESSAO) || "null"
-        );
-
-        return sessao &&
-            typeof sessao === "object"
-            ? sessao
-            : null;
-
+        const sessao = JSON.parse(localStorage.getItem(GESTOK_SESSAO) || 'null');
+        return sessao && typeof sessao === 'object' ? sessao : null;
     } catch (erro) {
-
         return null;
-
     }
-
 }
-
-
-/* =========================================
-   GERAR CÓDIGO DA LOJA
-========================================= */
-
-function gerarCodigoLojaGestok() {
-
-    let proximo = Number(
-
-        localStorage.getItem(
-            GESTOK_PROXIMO_CODIGO_LOJA
-        ) || "1"
-
-    );
-
-
-    if (
-        !Number.isInteger(proximo) ||
-        proximo < 1
-    ) {
-
-        proximo = 1;
-
-    }
-
-
-    const codigo = String(proximo)
-        .padStart(4, "0");
-
-
-    localStorage.setItem(
-
-        GESTOK_PROXIMO_CODIGO_LOJA,
-
-        String(proximo + 1)
-
-    );
-
-
-    return codigo;
-
-}
-
-
-/* =========================================
-   VERIFICAR PAGAMENTO
-========================================= */
 
 function pagamentoAprovadoGestok(conta) {
-
-    if (
-        !conta ||
-        !conta.assinatura
-    ) {
-
-        return false;
-
-    }
-
-
-    return (
-
-        conta.assinatura.status === "ativa" &&
-
-        conta.assinatura.pagamento === "aprovado"
-
+    return !!(
+        conta?.assinatura?.status === 'ativa' &&
+        conta?.assinatura?.pagamento === 'aprovado'
     );
-
 }
-
-
-/* =========================================
-   VERIFICAR ASSINATURA
-========================================= */
 
 function assinaturaAtivaGestok(conta) {
-
-    if (
-        !pagamentoAprovadoGestok(conta)
-    ) {
-
-        return false;
-
-    }
-
-
-    const vencimento =
-
-        new Date(
-            conta.assinatura.vencimento
-        ).getTime();
-
-
-    return (
-
-        Number.isFinite(vencimento) &&
-
-        vencimento > Date.now()
-
-    );
-
+    if (!pagamentoAprovadoGestok(conta)) return false;
+    const vencimento = new Date(conta.assinatura.vencimento).getTime();
+    return Number.isFinite(vencimento) && vencimento > Date.now();
 }
-
-
-/* =========================================
-   USUÁRIO LOGADO
-========================================= */
 
 function usuarioLogadoGestok() {
-
-    const conta =
-        obterContaGestok();
-
-    const sessao =
-        obterSessaoGestok();
-
-
-    return Boolean(
-
+    const sessao = obterSessaoGestok();
+    const conta = obterContaGestok();
+    return !!(
+        auth?.currentUser &&
+        sessao?.logado === true &&
         conta &&
-
-        sessao &&
-
-        sessao.logado === true &&
-
         assinaturaAtivaGestok(conta)
-
     );
-
 }
 
-
-/* =========================================
-   CAMINHO DO SISTEMA
-========================================= */
-
-function caminhoSistemaGestok() {
-
-    return "../sistema/index.html";
-
-}
-
-
-/* =========================================
-   CAMINHO DO LOGIN
-========================================= */
-
-function caminhoLoginGestok() {
-
-    return "../login/index.html";
-
-}
-
-
-/* =========================================
-   CAMINHO DO PAGAMENTO
-========================================= */
-
-function caminhoPagamentoGestok() {
-
-    return "../pagamento/index.html";
-
-}
-
-
-/* =========================================
-   EXIGIR LOGIN
-========================================= */
+function caminhoSistemaGestok() { return '../sistema/index.html'; }
+function caminhoLoginGestok() { return '../login/index.html'; }
+function caminhoPagamentoGestok() { return '../pagamento/index.html'; }
 
 function exigirLoginGestok() {
-
-    const conta =
-        obterContaGestok();
-
-    const sessao =
-        obterSessaoGestok();
-
-    const pagina =
-        window.location.pathname.toLowerCase();
-
-
+    const pagina = window.location.pathname.toLowerCase();
     const paginasPublicas = [
-
-        "/login/index.html",
-
-        "/cadastro/index.html",
-
-        "/planos/index.html",
-
-        "/apresentacao.html",
-
-        "/index.html"
-
+        '/login/index.html', '/cadastro/index.html', '/planos/index.html',
+        '/pagamento/index.html', '/apresentacao.html', '/index.html'
     ];
+    if (paginasPublicas.some(item => pagina.endsWith(item))) return true;
 
+    const conta = obterContaGestok();
+    const sessao = obterSessaoGestok();
 
-    const paginaPublica =
-        paginasPublicas.some(
-            function (item) {
-
-                return pagina.endsWith(item);
-
-            }
-        );
-
-
-    if (paginaPublica) {
-
-        return true;
-
-    }
-
-
-    /* -----------------------------------------
-       SEM CONTA
-    ----------------------------------------- */
-
-    if (!conta) {
-
-        window.location.replace(
-            caminhoLoginGestok()
-        );
-
+    if (!auth?.currentUser || !conta || !sessao?.logado) {
+        window.location.replace(caminhoLoginGestok());
         return false;
-
     }
 
-
-    /* -----------------------------------------
-       SEM SESSÃO
-    ----------------------------------------- */
-
-    if (
-        !sessao ||
-        sessao.logado !== true
-    ) {
-
-        window.location.replace(
-            caminhoLoginGestok()
-        );
-
+    if (!pagamentoAprovadoGestok(conta)) {
+        window.location.replace(caminhoPagamentoGestok());
         return false;
-
     }
 
-
-    /* -----------------------------------------
-       PAGAMENTO PENDENTE
-    ----------------------------------------- */
-
-    if (
-        !pagamentoAprovadoGestok(conta)
-    ) {
-
-        window.location.replace(
-            caminhoPagamentoGestok()
-        );
-
+    if (!assinaturaAtivaGestok(conta)) {
+        conta.assinatura.status = 'expirada';
+        localStorage.setItem(GESTOK_CONTA, JSON.stringify(conta));
+        window.location.replace(caminhoPagamentoGestok());
         return false;
-
     }
-
-
-    /* -----------------------------------------
-       ASSINATURA EXPIRADA
-    ----------------------------------------- */
-
-    if (
-        !assinaturaAtivaGestok(conta)
-    ) {
-
-        conta.assinatura.status =
-            "expirada";
-
-
-        localStorage.setItem(
-
-            GESTOK_CONTA,
-
-            JSON.stringify(conta)
-
-        );
-
-
-        window.location.replace(
-            caminhoPagamentoGestok()
-        );
-
-
-        return false;
-
-    }
-
 
     return true;
-
 }
 
-
-/* =========================================
-   CRIAR CONTA
-========================================= */
-
-function criarContaGestok(
-
-    nome,
-
-    email,
-
-    usuario,
-
-    senha
-
-) {
-
-    const contaExistente =
-        obterContaGestok();
-
-
-    if (contaExistente) {
-
-        return {
-
-            ok: false,
-
-            mensagem:
-                "Já existe uma conta neste navegador."
-
-        };
-
-    }
-
-
-    nome =
-        String(nome || "").trim();
-
-    email =
-        String(email || "")
-            .trim()
-            .toLowerCase();
-
-    usuario =
-        String(usuario || "")
-            .trim()
-            .toLowerCase();
-
-    senha =
-        String(senha || "");
-
-
-    if (!nome) {
-
-        return {
-
-            ok: false,
-
-            mensagem:
-                "Digite o nome da empresa."
-
-        };
-
-    }
-
-
-    if (!email) {
-
-        return {
-
-            ok: false,
-
-            mensagem:
-                "Digite seu e-mail."
-
-        };
-
-    }
-
-
-    if (!usuario) {
-
-        return {
-
-            ok: false,
-
-            mensagem:
-                "Digite um nome de usuário."
-
-        };
-
-    }
-
-
-    if (senha.length < 6) {
-
-        return {
-
-            ok: false,
-
-            mensagem:
-                "A senha precisa ter pelo menos 6 caracteres."
-
-        };
-
-    }
-
-
-    const agora =
-        new Date();
-
-
-    const conta = {
-
-        nome:
-            nome,
-
-        email:
-            email,
-
-        usuario:
-            usuario,
-
-        senha:
-            senha,
-
-        codigoLoja:
-            null,
-
-        criadaEm:
-            agora.toISOString(),
-
-        assinatura: {
-
-            plano:
-                "Gestok",
-
-            valor:
-                30,
-
-            dias:
-                30,
-
-            inicio:
-                null,
-
-            vencimento:
-                null,
-
-            status:
-                "aguardando_pagamento",
-
-            pagamento:
-                "pendente"
-
+async function criarContaGestok(nome, email, usuario, senha) {
+    try {
+        nome = String(nome || '').trim();
+        email = String(email || '').trim().toLowerCase();
+        usuario = String(usuario || '').trim().toLowerCase();
+        senha = String(senha || '');
+
+        if (!nome) return { ok:false, mensagem:'Digite o nome da empresa.' };
+        if (!email) return { ok:false, mensagem:'Digite seu e-mail.' };
+        if (!usuario) return { ok:false, mensagem:'Digite um nome de usuário.' };
+        if (senha.length < 6) return { ok:false, mensagem:'A senha precisa ter pelo menos 6 caracteres.' };
+
+        const contaLocal = obterContaGestok();
+        if (contaLocal?.firebaseUid) {
+            return { ok:false, mensagem:'Esta conta já foi criada. Acesse o pagamento.' };
         }
 
-    };
+        // O primeiro código é reservado no navegador apenas para formar o login interno.
+        // O código exibido da loja é criado junto ao documento da loja.
+        const codigoLogin = 'novo' + Date.now();
+        const emailAuth = `${codigoLogin}.${usuario}@login.gestok.local`;
+        const usuarioFirebase = await auth.createUserWithEmailAndPassword(emailAuth, senha);
+        const loja = await criarLojaGestok({ nome, email, usuario, uid: usuarioFirebase.uid, emailAuth });
 
+        const agora = new Date();
+        const conta = {
+            firebaseUid: usuarioFirebase.uid,
+            lojaId: loja.lojaId,
+            nome,
+            email,
+            usuario,
+            codigoLoja: loja.codigoLoja,
+            criadaEm: agora.toISOString(),
+            assinatura: {
+                plano:'Gestok', valor:30, dias:30,
+                inicio:null, vencimento:null,
+                status:'aguardando_pagamento', pagamento:'pendente'
+            }
+        };
 
-    localStorage.setItem(
+        // Firebase Auth precisa do código definitivo para os próximos logins.
+        // Recriamos a conta com o identificador definitivo não é possível; por isso
+        // o login usa o e-mail real armazenado no perfil via consulta autenticada após
+        // a sessão. Para manter o fluxo seguro, guardamos a sessão da conta recém-criada.
+        localStorage.setItem(GESTOK_CONTA, JSON.stringify(conta));
+        localStorage.removeItem(GESTOK_SESSAO);
 
-        GESTOK_CONTA,
-
-        JSON.stringify(conta)
-
-    );
-
-
-    localStorage.removeItem(
-        GESTOK_SESSAO
-    );
-
-
-    return {
-
-        ok: true,
-
-        conta:
-            conta
-
-    };
-
+        return { ok:true, conta };
+    } catch (erro) {
+        console.error('Erro ao criar conta Gestok:', erro);
+        return { ok:false, mensagem: typeof mensagemErroFirebase === 'function' ? mensagemErroFirebase(erro) : 'Não foi possível criar a conta.' };
+    }
 }
 
+async function entrarGestok(codigoLoja, usuario, senha) {
+    try {
+        codigoLoja = String(codigoLoja || '').trim();
+        usuario = String(usuario || '').trim().toLowerCase();
+        senha = String(senha || '');
 
-/* =========================================
-   LOGIN
-   CÓDIGO + USUÁRIO + SENHA
-========================================= */
+        const acesso = await obterAcessoLoginGestok(codigoLoja, usuario);
 
-function entrarGestok(
+        if (!acesso?.emailAuth || !acesso?.lojaId) {
+            return { ok:false, mensagem:'Código da Loja ou usuário incorreto.' };
+        }
 
-    codigoLoja,
+        const lojaRef = referenciaLoja(acesso.lojaId);
+        const lojaDoc = await lojaRef.get();
 
-    usuario,
+        if (!lojaDoc.exists) {
+            return { ok:false, mensagem:'Loja não encontrada.' };
+        }
 
-    senha
+        const contaLoja = lojaDoc.data();
+        const usuarioFirebase = await auth.signInWithEmailAndPassword(acesso.emailAuth, senha);
 
-) {
-
-    const conta =
-        obterContaGestok();
-
-
-    if (!conta) {
-
-        return {
-
-            ok: false,
-
-            mensagem:
-                "Nenhuma conta foi cadastrada neste navegador."
-
+        const conta = {
+            firebaseUid: usuarioFirebase.uid,
+            lojaId: acesso.lojaId,
+            nome: contaLoja.nome,
+            email: contaLoja.email,
+            usuario,
+            codigoLoja,
+            assinatura: contaLoja.assinatura || {
+                plano:'Gestok', valor:30, dias:30,
+                inicio:null, vencimento:null,
+                status:'aguardando_pagamento', pagamento:'pendente'
+            }
         };
 
+        localStorage.setItem(GESTOK_CONTA, JSON.stringify(conta));
+        localStorage.setItem(GESTOK_SESSAO, JSON.stringify({
+            logado:true,
+            codigoLoja,
+            usuario,
+            lojaId:acesso.lojaId,
+            firebaseUid:usuarioFirebase.uid,
+            loginEm:new Date().toISOString()
+        }));
+
+        return { ok:true, conta };
+    } catch (erro) {
+        console.error('Erro no login Gestok:', erro);
+        return { ok:false, mensagem: mensagemErroFirebase(erro) };
     }
-
-
-    codigoLoja =
-        String(codigoLoja || "")
-            .trim();
-
-
-    usuario =
-        String(usuario || "")
-            .trim()
-            .toLowerCase();
-
-
-    senha =
-        String(senha || "");
-
-
-    /* -----------------------------------------
-       VERIFICAR CÓDIGO DA LOJA
-    ----------------------------------------- */
-
-    if (
-        conta.codigoLoja !==
-        codigoLoja
-    ) {
-
-        return {
-
-            ok: false,
-
-            mensagem:
-                "Código da Loja incorreto."
-
-        };
-
-    }
-
-
-    /* -----------------------------------------
-       VERIFICAR USUÁRIO
-    ----------------------------------------- */
-
-    if (
-        conta.usuario !==
-        usuario
-    ) {
-
-        return {
-
-            ok: false,
-
-            mensagem:
-                "Usuário incorreto."
-
-        };
-
-    }
-
-
-    /* -----------------------------------------
-       VERIFICAR SENHA
-    ----------------------------------------- */
-
-    if (
-        conta.senha !==
-        senha
-    ) {
-
-        return {
-
-            ok: false,
-
-            mensagem:
-                "Senha incorreta."
-
-        };
-
-    }
-
-
-    /* -----------------------------------------
-       CRIAR SESSÃO
-    ----------------------------------------- */
-
-    localStorage.setItem(
-
-        GESTOK_SESSAO,
-
-        JSON.stringify({
-
-            logado:
-                true,
-
-            codigoLoja:
-                conta.codigoLoja,
-
-            usuario:
-                conta.usuario,
-
-            loginEm:
-                new Date().toISOString()
-
-        })
-
-    );
-
-
-    return {
-
-        ok: true,
-
-        conta:
-            conta
-
-    };
-
 }
 
+async function aprovarPagamentoGestok() {
+    try {
+        const conta = obterContaGestok();
+        if (!conta?.lojaId) return { ok:false, mensagem:'Conta ou loja não encontrada.' };
 
-/* =========================================
-   APROVAR PAGAMENTO
-========================================= */
+        const agora = new Date();
+        const vencimento = new Date(agora);
+        vencimento.setDate(vencimento.getDate() + 30);
 
-function aprovarPagamentoGestok() {
-
-    const conta =
-        obterContaGestok();
-
-
-    if (!conta) {
-
-        return {
-
-            ok: false,
-
-            mensagem:
-                "Conta não encontrada."
-
+        conta.assinatura = {
+            ...(conta.assinatura || {}),
+            inicio: agora.toISOString(),
+            vencimento: vencimento.toISOString(),
+            status:'ativa',
+            pagamento:'aprovado'
         };
 
+        await atualizarAssinaturaLojaGestok(conta.lojaId, conta.assinatura);
+        localStorage.setItem(GESTOK_CONTA, JSON.stringify(conta));
+        localStorage.setItem(GESTOK_SESSAO, JSON.stringify({
+            logado:true, codigoLoja:conta.codigoLoja, usuario:conta.usuario,
+            lojaId:conta.lojaId, firebaseUid:conta.firebaseUid,
+            loginEm:agora.toISOString()
+        }));
+
+        return { ok:true, conta };
+    } catch (erro) {
+        console.error('Erro ao aprovar pagamento:', erro);
+        return { ok:false, mensagem:'Não foi possível atualizar a assinatura.' };
     }
-
-
-    /* -----------------------------------------
-       GERAR CÓDIGO DA LOJA
-       SOMENTE UMA VEZ
-    ----------------------------------------- */
-
-    if (!conta.codigoLoja) {
-
-        conta.codigoLoja =
-            gerarCodigoLojaGestok();
-
-    }
-
-
-    const agora =
-        new Date();
-
-
-    const vencimento =
-        new Date(agora);
-
-
-    vencimento.setDate(
-
-        vencimento.getDate() + 30
-
-    );
-
-
-    conta.assinatura.inicio =
-        agora.toISOString();
-
-
-    conta.assinatura.vencimento =
-        vencimento.toISOString();
-
-
-    conta.assinatura.status =
-        "ativa";
-
-
-    conta.assinatura.pagamento =
-        "aprovado";
-
-
-    localStorage.setItem(
-
-        GESTOK_CONTA,
-
-        JSON.stringify(conta)
-
-    );
-
-
-    /* -----------------------------------------
-       CRIAR SESSÃO
-    ----------------------------------------- */
-
-    localStorage.setItem(
-
-        GESTOK_SESSAO,
-
-        JSON.stringify({
-
-            logado:
-                true,
-
-            codigoLoja:
-                conta.codigoLoja,
-
-            usuario:
-                conta.usuario,
-
-            loginEm:
-                agora.toISOString()
-
-        })
-
-    );
-
-
-    return {
-
-        ok: true,
-
-        conta:
-            conta
-
-    };
-
 }
 
-
-/* =========================================
-   SAIR
-========================================= */
-
-function sairGestok() {
-
-    localStorage.removeItem(
-        GESTOK_SESSAO
-    );
-
-
-    window.location.href =
-        caminhoLoginGestok();
-
+async function sairGestok() {
+    try { if (typeof sairFirebase === 'function') await sairFirebase(); } catch (erro) {}
+    localStorage.removeItem(GESTOK_SESSAO);
+    window.location.href = caminhoLoginGestok();
 }
 
-
-/* =========================================
-   DIAS RESTANTES
-========================================= */
-
-function diasRestantesGestok(
-
-    conta =
-        obterContaGestok()
-
-) {
-
-    if (
-
-        !conta ||
-
-        !conta.assinatura ||
-
-        !conta.assinatura.vencimento
-
-    ) {
-
-        return 0;
-
-    }
-
-
-    const diferenca =
-
-        new Date(
-            conta.assinatura.vencimento
-        ).getTime() -
-
-        Date.now();
-
-
-    return Math.max(
-
-        0,
-
-        Math.ceil(
-            diferenca / 86400000
-        )
-
-    );
-
+function diasRestantesGestok(conta = obterContaGestok()) {
+    if (!conta?.assinatura?.vencimento) return 0;
+    const diferenca = new Date(conta.assinatura.vencimento).getTime() - Date.now();
+    return Math.max(0, Math.ceil(diferenca / 86400000));
 }

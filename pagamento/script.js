@@ -89,7 +89,7 @@ document.addEventListener(
 
             btnPagamento.addEventListener(
                 "click",
-                function () {
+                async function () {
 
                     btnPagamento.disabled =
                         true;
@@ -115,7 +115,7 @@ document.addEventListener(
                         function () {
 
                             const resultado =
-                                aprovarPagamentoGestok();
+                                await aprovarPagamentoGestok();
 
 
                             if (!resultado.ok) {

@@ -35,7 +35,7 @@ document.addEventListener(
 
         form.addEventListener(
             "submit",
-            function (e) {
+            async function (e) {
 
                 e.preventDefault();
 
@@ -226,7 +226,7 @@ document.addEventListener(
                 ================================= */
 
                 const resultado =
-                    criarContaGestok(
+                    await criarContaGestok(
 
                         nome,
 

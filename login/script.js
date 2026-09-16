@@ -75,7 +75,7 @@ document.addEventListener(
 
         form.addEventListener(
             "submit",
-            function (e) {
+            async function (e) {
 
                 e.preventDefault();
 
@@ -192,7 +192,7 @@ document.addEventListener(
                 ================================= */
 
                 const resultado =
-                    entrarGestok(
+                    await entrarGestok(
 
                         codigoLoja,
 
