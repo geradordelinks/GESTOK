@@ -16,7 +16,126 @@
 const GESTOK_CONTA = "gestok_conta";
 const GESTOK_SESSAO = "gestok_sessao";
 
+/* =========================================
+   CONTEXTO CENTRAL DO GESTOK
+   -----------------------------------------
+   Guarda temporariamente as informações
+   essenciais da sessão atual.
 
+   IMPORTANTE:
+   Isso NÃO substitui o Firebase Auth.
+   O Firebase continua sendo a autoridade.
+========================================= */
+
+let gestokContexto = null;
+
+
+/* =========================================
+   DEFINIR CONTEXTO
+========================================= */
+
+function definirContextoGestok(
+    usuario,
+    conta
+) {
+
+    if (
+        !usuario ||
+        !usuario.uid ||
+        !conta ||
+        !conta.lojaId
+    ) {
+
+        gestokContexto = null;
+
+        return null;
+
+    }
+
+
+    gestokContexto = {
+
+        uid:
+            usuario.uid,
+
+        lojaId:
+            conta.lojaId,
+
+        codigoLoja:
+            conta.codigoLoja || "",
+
+        usuario:
+            conta.usuario || "",
+
+        nome:
+            conta.nome || "",
+
+        email:
+            conta.email || usuario.email || "",
+
+        carregadoEm:
+            Date.now()
+
+    };
+
+
+    return gestokContexto;
+
+}
+
+
+/* =========================================
+   OBTER CONTEXTO
+========================================= */
+
+function obterContextoGestok() {
+
+    return gestokContexto;
+
+}
+
+
+/* =========================================
+   OBTER LOJA ATUAL
+========================================= */
+
+function obterLojaAtualGestok() {
+
+    return (
+        gestokContexto?.lojaId ||
+        null
+    );
+
+}
+
+
+/* =========================================
+   OBTER UID ATUAL DO CONTEXTO
+========================================= */
+
+function obterUidAtualGestok() {
+
+    return (
+        gestokContexto?.uid ||
+        null
+    );
+
+}
+
+
+/* =========================================
+   VERIFICAR CONTEXTO
+========================================= */
+
+function contextoGestokCarregado() {
+
+    return Boolean(
+        gestokContexto &&
+        gestokContexto.uid &&
+        gestokContexto.lojaId
+    );
+
+}
 /* =========================================
    OBTER CONTA LOCAL
 ========================================= */
@@ -150,6 +269,13 @@ function usuarioLogadoGestok() {
    OBSERVAR AUTENTICAÇÃO
 ========================================= */
 
+/* =========================================
+   OBSERVAR AUTENTICAÇÃO
+   -----------------------------------------
+   Restaura o contexto quando o Firebase
+   recupera automaticamente a sessão.
+========================================= */
+
 function observarAutenticacaoGestok(callback) {
 
     if (
@@ -161,18 +287,237 @@ function observarAutenticacaoGestok(callback) {
 
     }
 
+
     return firebase
         .auth()
         .onAuthStateChanged(
-            function (usuario) {
+            async function (usuario) {
 
-                if (typeof callback === "function") {
+                /* =====================================
+                   SEM USUÁRIO
+                ===================================== */
+
+                if (!usuario) {
+
+                    gestokContexto = null;
+
+                    if (
+                        typeof callback === "function"
+                    ) {
+
+                        callback(null);
+
+                    }
+
+                    return;
+
+                }
+
+
+                /* =====================================
+                   TENTAR RESTAURAR PELO CACHE
+                ===================================== */
+
+                const sessao =
+                    obterSessaoGestok();
+
+
+                const conta =
+                    obterContaGestok();
+
+
+                if (
+                    sessao &&
+                    conta &&
+                    sessao.firebaseUid === usuario.uid &&
+                    conta.firebaseUid === usuario.uid &&
+                    conta.lojaId
+                ) {
+
+                    definirContextoGestok(
+                        usuario,
+                        conta
+                    );
+
+
+                    if (
+                        typeof callback === "function"
+                    ) {
+
+                        callback(usuario);
+
+                    }
+
+                    return;
+
+                }
+
+
+                /* =====================================
+                   SEM CACHE VÁLIDO
+                   BUSCAR INFORMAÇÕES DO USUÁRIO
+                ===================================== */
+
+                try {
+
+                    const db =
+                        firebase.firestore();
+
+
+                    const lojasSnap =
+                        await db
+                            .collection("lojas")
+                            .get();
+
+
+                    let lojaEncontrada =
+                        null;
+
+
+                    let usuarioEncontrado =
+                        null;
+
+
+                    for (
+                        const lojaDoc
+                        of lojasSnap.docs
+                    ) {
+
+                        const usuarioSnap =
+                            await lojaDoc
+                                .ref
+                                .collection("usuarios")
+                                .doc(usuario.uid)
+                                .get();
+
+
+                        if (
+                            usuarioSnap.exists
+                        ) {
+
+                            lojaEncontrada =
+                                lojaDoc;
+
+
+                            usuarioEncontrado =
+                                usuarioSnap.data();
+
+
+                            break;
+
+                        }
+
+                    }
+
+
+                    /* =====================================
+                       LOJA ENCONTRADA
+                    ===================================== */
+
+                    if (
+                        lojaEncontrada &&
+                        usuarioEncontrado
+                    ) {
+
+                        const loja =
+                            lojaEncontrada.data();
+
+
+                        const contaRestaurada = {
+
+                            firebaseUid:
+                                usuario.uid,
+
+                            lojaId:
+                                lojaEncontrada.id,
+
+                            nome:
+                                loja.nome || "",
+
+                            email:
+                                usuario.email || "",
+
+                            usuario:
+                                usuarioEncontrado.usuario || "",
+
+                            codigoLoja:
+                                loja.codigo || "",
+
+                            assinatura:
+                                loja.assinatura || {
+
+                                    plano:
+                                        "Gestok",
+
+                                    valor:
+                                        30,
+
+                                    dias:
+                                        30,
+
+                                    inicio:
+                                        null,
+
+                                    vencimento:
+                                        null,
+
+                                    status:
+                                        "aguardando_pagamento",
+
+                                    pagamento:
+                                        "pendente"
+
+                                }
+
+                        };
+
+
+                        localStorage.setItem(
+
+                            GESTOK_CONTA,
+
+                            JSON.stringify(
+                                contaRestaurada
+                            )
+
+                        );
+
+
+                        definirContextoGestok(
+
+                            usuario,
+
+                            contaRestaurada
+
+                        );
+
+                    }
+
+
+                } catch (erro) {
+
+                    console.error(
+                        "Erro ao restaurar contexto Gestok:",
+                        erro
+                    );
+
+                }
+
+
+                /* =====================================
+                   CALLBACK DA PÁGINA
+                ===================================== */
+
+                if (
+                    typeof callback === "function"
+                ) {
 
                     callback(usuario);
 
                 }
 
             }
+
         );
 
 }
@@ -711,6 +1056,14 @@ async function criarContaGestok(
             })
 
         );
+        /* =====================================
+        DEFINIR CONTEXTO IMEDIATAMENTE
+        ===================================== */
+
+        definirContextoGestok(
+            usuarioFirebase,
+            conta
+        );
 
 
         /* =====================================
@@ -781,6 +1134,146 @@ async function criarContaGestok(
                 erro
 
         };
+
+    }
+
+}
+
+
+/* =========================================
+   CACHE RÁPIDO DO DASHBOARD
+   -----------------------------------------
+   Guarda somente os números necessários
+   para a primeira pintura da tela.
+   O Firestore continua sendo a fonte oficial.
+========================================= */
+
+function chaveCacheDashboardGestok(lojaId) {
+
+    return `gestok_dashboard_cache_${lojaId}`;
+
+}
+
+
+function salvarCacheDashboardGestok(lojaId, produtos) {
+
+    if (!lojaId || !Array.isArray(produtos)) {
+        return;
+    }
+
+    try {
+
+        const ativos = produtos.filter(function (produto) {
+            return produto && produto.ativo !== false;
+        });
+
+        const estoqueMinimo = ativos.filter(function (produto) {
+
+            const quantidade = Number(produto.quantidade || 0);
+            const minimo = Number(produto.estoqueMinimo || 0);
+
+            return minimo > 0 && quantidade < minimo;
+
+        });
+
+        const quantidadeTotal = ativos.reduce(function (total, produto) {
+            return total + Number(produto.quantidade || 0);
+        }, 0);
+
+        localStorage.setItem(
+            chaveCacheDashboardGestok(lojaId),
+            JSON.stringify({
+                produtosAtivos: ativos.length,
+                estoqueMinimo: estoqueMinimo.length,
+                quantidadeTotal: quantidadeTotal,
+                atualizadoEm: new Date().toISOString()
+            })
+        );
+
+    } catch (erro) {
+
+        console.warn(
+            "Não foi possível salvar o cache do Dashboard:",
+            erro
+        );
+
+    }
+
+}
+
+
+function obterCacheDashboardGestok(lojaId) {
+
+    if (!lojaId) {
+        return null;
+    }
+
+    try {
+
+        const dados = localStorage.getItem(
+            chaveCacheDashboardGestok(lojaId)
+        );
+
+        if (!dados) {
+            return null;
+        }
+
+        const cache = JSON.parse(dados);
+
+        return cache && typeof cache === "object"
+            ? cache
+            : null;
+
+    } catch (erro) {
+
+        return null;
+
+    }
+
+}
+
+
+async function precarregrarDashboardGestok(lojaId) {
+
+    if (
+        !lojaId ||
+        typeof firebase === "undefined" ||
+        !firebase.firestore
+    ) {
+        return null;
+    }
+
+    try {
+
+        const snapshot = await firebase
+            .firestore()
+            .collection("lojas")
+            .doc(lojaId)
+            .collection("produtos")
+            .get();
+
+        const produtos = snapshot.docs.map(function (doc) {
+            return {
+                id: doc.id,
+                ...doc.data()
+            };
+        });
+
+        salvarCacheDashboardGestok(
+            lojaId,
+            produtos
+        );
+
+        return produtos;
+
+    } catch (erro) {
+
+        console.warn(
+            "Pré-carregamento do Dashboard não concluído:",
+            erro
+        );
+
+        return null;
 
     }
 
@@ -1123,6 +1616,32 @@ async function entrarGestok(
 
             })
 
+        );
+
+
+        /* =====================================
+           DEFINIR CONTEXTO IMEDIATAMENTE
+           -------------------------------------
+           A página seguinte já recebe a loja
+           sem precisar descobri-la novamente.
+        ===================================== */
+
+        definirContextoGestok(
+            user,
+            conta
+        );
+
+
+        /* =====================================
+           PRÉ-CARREGAR DADOS DO DASHBOARD
+           -------------------------------------
+           Se funcionar, o Dashboard já terá
+           os números no primeiro carregamento.
+           Se falhar, o login continua normal.
+        ===================================== */
+
+        await precarregrarDashboardGestok(
+            conta.lojaId
         );
 
 

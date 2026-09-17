@@ -1126,10 +1126,34 @@ function obterLojaDashboardGestok() {
     const usuario =
         usuarioFirebaseAtualGestok();
 
+    if (!usuario) {
+        return null;
+    }
+
+    /* -----------------------------------------
+       PRIMEIRO: CONTEXTO CENTRAL
+    ----------------------------------------- */
+
+    if (typeof obterLojaAtualGestok === "function") {
+
+        const lojaContexto =
+            obterLojaAtualGestok();
+
+        if (lojaContexto) {
+            return lojaContexto;
+        }
+
+    }
+
+
+    /* -----------------------------------------
+       SEGUNDO: CACHE DA CONTA
+    ----------------------------------------- */
+
     const conta =
         obterContaGestok();
 
-    if (!usuario || !conta || !conta.lojaId) {
+    if (!conta || !conta.lojaId) {
         return null;
     }
 
@@ -1303,6 +1327,64 @@ function iniciarMonitoramentoProdutosDashboard() {
     }
 
 
+    /* =====================================
+       PRIMEIRA PINTURA PELO CACHE
+       -------------------------------------
+       Evita a tela zerada enquanto o
+       onSnapshot recupera os dados.
+    ===================================== */
+
+    const lojaId =
+        obterLojaDashboardGestok();
+
+    if (
+        lojaId &&
+        typeof obterCacheDashboardGestok === "function"
+    ) {
+
+        const cache =
+            obterCacheDashboardGestok(lojaId);
+
+        if (cache) {
+
+            const produtosAtivos =
+                Number(cache.produtosAtivos || 0);
+
+            const estoqueMinimo =
+                Number(cache.estoqueMinimo || 0);
+
+            const quantidadeTotal =
+                Number(cache.quantidadeTotal || 0);
+
+            const elementoProdutos =
+                document.getElementById("produtosAtivos");
+
+            const elementoMinimo =
+                document.getElementById("estoqueMinimo");
+
+            const elementoTotal =
+                document.getElementById("estoqueMaximo");
+
+            if (elementoProdutos) {
+                elementoProdutos.textContent =
+                    produtosAtivos;
+            }
+
+            if (elementoMinimo) {
+                elementoMinimo.textContent =
+                    estoqueMinimo;
+            }
+
+            if (elementoTotal) {
+                elementoTotal.textContent =
+                    quantidadeTotal;
+            }
+
+        }
+
+    }
+
+
     cancelarProdutosDashboard =
         referencia
             .onSnapshot(
@@ -1319,6 +1401,21 @@ function iniciarMonitoramentoProdutosDashboard() {
 
                             }
                         );
+
+                    const lojaId =
+                        obterLojaDashboardGestok();
+
+                    if (
+                        lojaId &&
+                        typeof salvarCacheDashboardGestok === "function"
+                    ) {
+
+                        salvarCacheDashboardGestok(
+                            lojaId,
+                            produtos
+                        );
+
+                    }
 
                     atualizarDashboard(
                         produtos

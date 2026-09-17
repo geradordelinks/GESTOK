@@ -238,6 +238,14 @@ document.addEventListener(
 
                     );
 
+                /* =====================================
+                DEFINIR CONTEXTO IMEDIATAMENTE
+                ===================================== */
+
+                definirContextoGestok(
+                    usuarioFirebase,
+                    conta
+                );
 
                 /* =================================
                    ERRO
