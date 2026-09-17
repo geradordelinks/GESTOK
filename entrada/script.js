@@ -133,7 +133,13 @@ let produtosCache = [];
 
 
 /* =========================================
-   OBTER LOJA DO USUÁRIO FIREBASE
+   LOJA ATUAL
+   FIREBASE AUTH + FIRESTORE
+
+   NÃO USA:
+   - gestok_produtos
+   - gestok_conta
+   - localStorage
 ========================================= */
 
 async function obterLojaAtualEntradaGestok() {
@@ -156,93 +162,173 @@ async function obterLojaAtualEntradaGestok() {
 
 
     console.log(
-        "Entrada - UID autenticado:",
+        "ENTRADA - UID Firebase:",
         uid
     );
 
 
     /* =====================================
-       PROCURAR O USUÁRIO NAS LOJAS
+       MÉTODO 1
+       LOJAS / USUARIOS / UID
     ===================================== */
 
-    const lojasSnapshot =
-        await db
-            .collection("lojas")
-            .get();
+    try {
+
+        const lojasSnapshot =
+            await db
+                .collection("lojas")
+                .get();
 
 
-    for (
-        const lojaDoc
-        of lojasSnapshot.docs
-    ) {
-
-        const usuarioRef =
-            lojaDoc
-                .ref
-                .collection("usuarios")
-                .doc(uid);
-
-
-        const usuarioSnapshot =
-            await usuarioRef.get();
-
-
-        if (
-            usuarioSnapshot.exists
+        for (
+            const lojaDoc
+            of lojasSnapshot.docs
         ) {
 
-            console.log(
-                "Entrada - Loja encontrada:",
-                lojaDoc.id
-            );
+            const usuarioDoc =
+                await lojaDoc
+                    .ref
+                    .collection("usuarios")
+                    .doc(uid)
+                    .get();
 
 
-            return lojaDoc.id;
+            if (
+                usuarioDoc.exists
+            ) {
+
+                console.log(
+                    "ENTRADA - Loja encontrada pelo usuário:",
+                    lojaDoc.id
+                );
+
+
+                return lojaDoc.id;
+
+            }
 
         }
+
+    } catch (erro) {
+
+        console.error(
+            "Erro procurando usuário nas lojas:",
+            erro
+        );
 
     }
 
 
     /* =====================================
-       PROCURAR COMO DONO DA LOJA
+       MÉTODO 2
+       LOJAS / DONOUUID
     ===================================== */
 
-    const donoSnapshot =
-        await db
-            .collection("lojas")
-            .where(
-                "donoUid",
-                "==",
-                uid
-            )
-            .limit(1)
-            .get();
+    try {
+
+        const donoSnapshot =
+            await db
+                .collection("lojas")
+                .where(
+                    "donoUid",
+                    "==",
+                    uid
+                )
+                .limit(1)
+                .get();
 
 
-    if (
-        !donoSnapshot.empty
-    ) {
+        if (
+            !donoSnapshot.empty
+        ) {
 
-        const lojaId =
-            donoSnapshot
-                .docs[0]
-                .id;
+            const lojaId =
+                donoSnapshot
+                    .docs[0]
+                    .id;
 
 
-        console.log(
-            "Entrada - Loja encontrada pelo donoUid:",
-            lojaId
+            console.log(
+                "ENTRADA - Loja encontrada pelo donoUid:",
+                lojaId
+            );
+
+
+            return lojaId;
+
+        }
+
+    } catch (erro) {
+
+        console.error(
+            "Erro procurando loja pelo donoUid:",
+            erro
         );
-
-
-        return lojaId;
 
     }
 
 
+    /* =====================================
+       MÉTODO 3
+       ACESSOS / UID
+    ===================================== */
+
+    try {
+
+        const acessoSnapshot =
+            await db
+                .collection("acessos")
+                .where(
+                    "uid",
+                    "==",
+                    uid
+                )
+                .limit(1)
+                .get();
+
+
+        if (
+            !acessoSnapshot.empty
+        ) {
+
+            const acesso =
+                acessoSnapshot
+                    .docs[0]
+                    .data();
+
+
+            if (
+                acesso.lojaId
+            ) {
+
+                console.log(
+                    "ENTRADA - Loja encontrada pelo acesso:",
+                    acesso.lojaId
+                );
+
+
+                return acesso.lojaId;
+
+            }
+
+        }
+
+    } catch (erro) {
+
+        console.error(
+            "Erro procurando acesso:",
+            erro
+        );
+
+    }
+
+
+    /* =====================================
+       NENHUMA LOJA ENCONTRADA
+    ===================================== */
+
     throw new Error(
-        "Não foi encontrada uma loja vinculada ao usuário."
+        "Nenhuma loja foi encontrada para o usuário autenticado."
     );
 
 }
@@ -256,6 +342,15 @@ async function referenciaProdutosEntradaGestok() {
 
     const lojaId =
         await obterLojaAtualEntradaGestok();
+
+
+    if (!lojaId) {
+
+        throw new Error(
+            "Loja não identificada."
+        );
+
+    }
 
 
     return referenciaProdutos(
@@ -273,6 +368,15 @@ async function referenciaMovimentacoesEntradaGestok() {
 
     const lojaId =
         await obterLojaAtualEntradaGestok();
+
+
+    if (!lojaId) {
+
+        throw new Error(
+            "Loja não identificada."
+        );
+
+    }
 
 
     return referenciaMovimentacoes(
@@ -304,15 +408,23 @@ async function carregarProdutos() {
 
     try {
 
+        /* =================================
+           DESCOBRIR LOJA
+        ================================= */
+
         const lojaId =
             await obterLojaAtualEntradaGestok();
 
 
         console.log(
-            "Entrada - carregando produtos da loja:",
+            "ENTRADA - Loja utilizada:",
             lojaId
         );
 
+
+        /* =================================
+           REFERÊNCIA DIRETA
+        ================================= */
 
         const produtosRef =
             referenciaProdutos(
@@ -320,37 +432,49 @@ async function carregarProdutos() {
             );
 
 
-        /*
-           IMPORTANTE:
-
-           A partir daqui a Entrada NÃO consulta:
-
-           localStorage
-           gestok_produtos
-           gestok_conta
-
-           A lista vem diretamente do Firestore.
-        */
+        /* =================================
+           BUSCAR FIRESTORE
+        ================================= */
 
         const snapshot =
             await produtosRef.get();
 
 
+        console.log(
+            "ENTRADA - Quantidade de documentos encontrados:",
+            snapshot.size
+        );
+
+
+        /* =================================
+           CONVERTER DOCUMENTOS
+        ================================= */
+
         produtosCache =
             snapshot.docs
                 .map(function (doc) {
+
+                    const dados =
+                        doc.data();
+
 
                     return {
 
                         id:
                             doc.id,
 
-                        ...doc.data()
+                        ...dados
 
                     };
 
                 })
                 .filter(function (produto) {
+
+                    /*
+                       Produto só fica disponível
+                       se não estiver explicitamente
+                       desativado.
+                    */
 
                     return (
                         produto.ativo !== false
@@ -382,7 +506,7 @@ async function carregarProdutos() {
 
 
         console.log(
-            "Entrada - produtos encontrados:",
+            "ENTRADA - Produtos ativos:",
             produtosCache
         );
 
@@ -414,6 +538,12 @@ async function carregarProdutos() {
 
 
             atualizarInformacoes();
+
+
+            console.log(
+                "ENTRADA - Nenhum produto ativo encontrado."
+            );
+
 
             return;
 
@@ -449,10 +579,17 @@ async function carregarProdutos() {
                     );
 
 
-                option.textContent =
-                    codigo
-                        ? `${nome} — ${codigo}`
-                        : nome;
+                if (codigo) {
+
+                    option.textContent =
+                        `${nome} — ${codigo}`;
+
+                } else {
+
+                    option.textContent =
+                        nome;
+
+                }
 
 
                 selectProduto.appendChild(
@@ -467,17 +604,19 @@ async function carregarProdutos() {
 
 
         console.log(
-            "Entrada - total:",
-            produtosCache.length
+            "ENTRADA - Lista carregada com sucesso."
         );
 
 
     } catch (erro) {
 
         console.error(
-            "Erro ao carregar produtos na Entrada:",
+            "ENTRADA - Erro ao carregar produtos:",
             erro
         );
+
+
+        produtosCache = [];
 
 
         selectProduto.innerHTML = `
@@ -735,6 +874,7 @@ if (form) {
             } catch (erro) {
 
                 console.error(
+                    "Erro ao identificar loja:",
                     erro
                 );
 
@@ -890,6 +1030,10 @@ if (form) {
                         };
 
 
+                        /* =========================
+                           ATUALIZAR PRODUTO
+                        ========================= */
+
                         transaction.update(
                             produtoRef,
                             {
@@ -906,6 +1050,10 @@ if (form) {
                             }
                         );
 
+
+                        /* =========================
+                           REGISTRAR MOVIMENTAÇÃO
+                        ========================= */
 
                         transaction.set(
                             movimentacaoRef,
@@ -998,6 +1146,10 @@ if (form) {
                 );
 
 
+                /* =================================
+                   LIMPAR FORMULÁRIO
+                ================================= */
+
                 form.reset();
 
 
@@ -1024,6 +1176,10 @@ if (form) {
 
                 }
 
+
+                /* =================================
+                   RECARREGAR PRODUTOS
+                ================================= */
 
                 await carregarProdutos();
 
@@ -1078,7 +1234,7 @@ document.addEventListener(
                 if (!usuario) {
 
                     console.log(
-                        "Entrada: usuário não autenticado."
+                        "ENTRADA - Usuário não autenticado."
                     );
 
                     return;
@@ -1087,7 +1243,7 @@ document.addEventListener(
 
 
                 console.log(
-                    "Entrada: Firebase UID:",
+                    "ENTRADA - Firebase UID:",
                     usuario.uid
                 );
 
@@ -1099,7 +1255,7 @@ document.addEventListener(
                 } catch (erro) {
 
                     console.error(
-                        "Erro ao iniciar Entrada:",
+                        "ENTRADA - Erro na inicialização:",
                         erro
                     );
 
