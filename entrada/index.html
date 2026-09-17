@@ -334,29 +334,55 @@
     </script>
 
 
-    <!-- =========================================
-         FIREBASE HELPERS
-    ========================================== -->
+<!-- =========================================
+     FIREBASE
+========================================= -->
 
-    <script src="../firebase/auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
 
-    <script src="../firebase/firestore.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
 
-    <script src="../auth.js"></script>
-
-
-    <!-- =========================================
-         COMPONENTES
-    ========================================== -->
-
-    <script src="../componentes/sidebar.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
 
 
-    <!-- =========================================
-         SCRIPT DA ENTRADA
-    ========================================== -->
+<!-- =========================================
+     FIREBASE CONFIG
+========================================= -->
 
-    <script src="script.js"></script>
+<script src="../firebase/config.js"></script>
+
+<script>
+
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+
+</script>
+
+
+<!-- =========================================
+     FIREBASE HELPERS
+========================================= -->
+
+<script src="../firebase/auth.js"></script>
+
+<script src="../firebase/firestore.js"></script>
+
+<script src="../auth.js"></script>
+
+
+<!-- =========================================
+     SIDEBAR
+========================================= -->
+
+<script src="../componentes/sidebar.js"></script>
+
+
+<!-- =========================================
+     ENTRADA
+========================================= -->
+
+<script src="script.js"></script>
 
 </body>
 
