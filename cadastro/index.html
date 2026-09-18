@@ -19,6 +19,79 @@
 
 </head>
 
+<!-- =========================================
+     PAINEL DE NOTIFICAÇÕES
+========================================= -->
+
+<div
+    class="notifications-panel"
+    id="notificationsPanel"
+    aria-hidden="true">
+
+    <div class="notifications-header">
+
+        <div>
+            <strong>Notificações</strong>
+            <span id="notificationsSubtitle">
+                Comunicados do Gestok
+            </span>
+        </div>
+
+        <button
+            type="button"
+            class="notifications-close"
+            id="fecharNotificacoes"
+            aria-label="Fechar notificações">
+
+            ×
+
+        </button>
+
+    </div>
+
+
+    <div class="notifications-actions">
+
+        <button
+            type="button"
+            id="marcarAvisosLidos">
+
+            Marcar todas como lidas
+
+        </button>
+
+    </div>
+
+
+    <div
+        class="notifications-list"
+        id="notificationsList">
+
+        <!-- As notificações serão carregadas aqui -->
+
+    </div>
+
+
+    <div
+        class="notifications-empty"
+        id="notificationsEmpty"
+        hidden>
+
+        <div class="notifications-empty-icon">
+            ✓
+        </div>
+
+        <strong>
+            Nenhuma notificação
+        </strong>
+
+        <span>
+            Você não possui novos comunicados.
+        </span>
+
+    </div>
+
+</div>
 <body>
 
     <main>
