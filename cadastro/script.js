@@ -225,27 +225,42 @@ document.addEventListener(
                    CRIAR CONTA
                 ================================= */
 
-                const resultado =
-                    await criarContaGestok(
+                let resultado;
 
-                        nome,
+                try {
 
-                        email,
+                    resultado =
+                        await criarContaGestok(
 
-                        usuarioLimpo,
+                            nome,
 
-                        senha
+                            email,
 
+                            usuarioLimpo,
+
+                            senha
+
+                        );
+
+                } catch (erro) {
+
+                    console.error(
+                        "Erro inesperado ao criar conta:",
+                        erro
                     );
 
-                /* =====================================
-                DEFINIR CONTEXTO IMEDIATAMENTE
-                ===================================== */
+                    resultado = {
 
-                definirContextoGestok(
-                    usuarioFirebase,
-                    conta
-                );
+                        ok: false,
+
+                        mensagem:
+                            typeof mensagemErroFirebaseGestok === "function"
+                                ? mensagemErroFirebaseGestok(erro)
+                                : "Não foi possível criar a conta. Tente novamente."
+
+                    };
+
+                }
 
                 /* =================================
                    ERRO
