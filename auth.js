@@ -527,7 +527,7 @@ function observarAutenticacaoGestok(callback) {
    GERAR CÓDIGO DA LOJA
 ========================================= */
 
-async function gerarCodigoLojaGestok() {
+async function gerarCodigoLojaGestok(usuario = "") {
 
     if (
         typeof firebase === "undefined" ||
@@ -545,7 +545,23 @@ async function gerarCodigoLojaGestok() {
         firebase.firestore();
 
 
-    for (let tentativa = 0; tentativa < 20; tentativa++) {
+    usuario =
+        String(usuario || "")
+            .trim()
+            .toLowerCase();
+
+
+    /* -----------------------------------------
+       O cadastro não pode consultar toda a
+       coleção lojas, pois as regras de segurança
+       impedem uma consulta global.
+
+       Usamos o documento de acesso como teste
+       rápido de disponibilidade da combinação
+       Código + Usuário.
+    ----------------------------------------- */
+
+    for (let tentativa = 0; tentativa < 50; tentativa++) {
 
         const codigo =
             String(
@@ -556,19 +572,19 @@ async function gerarCodigoLojaGestok() {
             );
 
 
-        const consulta =
+        if (!usuario) {
+            return codigo;
+        }
+
+
+        const acessoSnap =
             await db
-                .collection("lojas")
-                .where(
-                    "codigo",
-                    "==",
-                    codigo
-                )
-                .limit(1)
+                .collection("acessos")
+                .doc(`${codigo}_${usuario}`)
                 .get();
 
 
-        if (consulta.empty) {
+        if (!acessoSnap.exists) {
 
             return codigo;
 
@@ -582,7 +598,6 @@ async function gerarCodigoLojaGestok() {
     );
 
 }
-
 
 /* =========================================
    PAGAMENTO APROVADO
@@ -830,7 +845,7 @@ async function criarContaGestok(
         ===================================== */
 
         const codigoLoja =
-            await gerarCodigoLojaGestok();
+            await gerarCodigoLojaGestok(usuario);
 
 
         /* =====================================
