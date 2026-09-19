@@ -421,12 +421,22 @@ function atualizarDadosPerfil() {
 
 
     /* =====================================
-       NOME
+       NOME DA EMPRESA
     ===================================== */
 
     const nome =
         String(
             conta.nome || ""
+        ).trim();
+
+
+    /* =====================================
+       NOME DO USUÁRIO
+    ===================================== */
+
+    const usuario =
+        String(
+            conta.usuario || ""
         ).trim();
 
 
@@ -442,6 +452,7 @@ function atualizarDadosPerfil() {
 
     /* =====================================
        CAMPO NOME
+       CONTINUA SENDO EMPRESA
     ===================================== */
 
     if (
@@ -472,30 +483,31 @@ function atualizarDadosPerfil() {
 
     /* =====================================
        NOME NO HEADER
+       AGORA MOSTRA O USUÁRIO
     ===================================== */
 
-    if (
-        headerName &&
-        nome
-    ) {
+    if (headerName) {
 
         headerName.textContent =
-            nome;
+            usuario ||
+            "Usuário";
 
     }
 
 
     /* =====================================
        AVATAR
+       PRIMEIRA LETRA DO USUÁRIO
     ===================================== */
 
-    if (
-        headerAvatar &&
-        nome
-    ) {
+    if (headerAvatar) {
+
+        const nomeAvatar =
+            usuario ||
+            "U";
 
         headerAvatar.textContent =
-            nome
+            nomeAvatar
                 .charAt(0)
                 .toUpperCase();
 
@@ -900,6 +912,10 @@ if (saveProfile) {
             }
 
 
+            /* =================================
+               NOME CONTINUA SENDO A EMPRESA
+            ================================= */
+
             conta.nome =
                 nome;
 
@@ -928,20 +944,33 @@ if (saveProfile) {
             );
 
 
-            /* Atualizar tela */
+            /* =================================
+               ATUALIZAR HEADER COM USUÁRIO
+            ================================= */
+
+            const usuario =
+                String(
+                    conta.usuario || ""
+                ).trim();
+
 
             if (headerName) {
 
                 headerName.textContent =
-                    nome;
+                    usuario ||
+                    "Usuário";
 
             }
 
 
             if (headerAvatar) {
 
+                const nomeAvatar =
+                    usuario ||
+                    "U";
+
                 headerAvatar.textContent =
-                    nome
+                    nomeAvatar
                         .charAt(0)
                         .toUpperCase();
 

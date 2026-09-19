@@ -2205,108 +2205,146 @@ return String(texto ?? "")
 USUÁRIO LOGADO
 ========================================= */
 
+/* =========================================
+   USUÁRIO LOGADO
+========================================= */
+
 function atualizarNomeUsuario() {
 
-const nomePrincipal =
-    document.getElementById(
-        "nomeUsuario"
-    );
+    const nomePrincipal =
+        document.getElementById(
+            "nomeUsuario"
+        );
 
+    const nomeMenu =
+        document.getElementById(
+            "nomeUsuarioMenu"
+        );
 
-const nomeMenu =
-    document.getElementById(
-        "nomeUsuarioMenu"
-    );
-
-
-const avatar =
-    document.getElementById(
-        "avatarUsuario"
-    );
-
-
-try {
-
-    const dados =
-        localStorage.getItem(
-            "gestok_conta"
+    const avatar =
+        document.getElementById(
+            "avatarUsuario"
         );
 
 
-    if (!dados) {
+    try {
 
-        console.warn(
-            "Nenhuma conta encontrada em gestok_conta."
+        const dados =
+            localStorage.getItem(
+                "gestok_conta"
+            );
+
+
+        if (!dados) {
+
+            console.warn(
+                "Nenhuma conta encontrada em gestok_conta."
+            );
+
+            return;
+
+        }
+
+
+        const conta =
+            JSON.parse(dados);
+
+
+        if (
+            !conta ||
+            typeof conta !== "object"
+        ) {
+
+            return;
+
+        }
+
+
+        /* =====================================
+           NOME DA EMPRESA
+           -------------------------------------
+           Continua sendo usado no centro
+           do dashboard.
+        ====================================== */
+
+        const nomeEmpresa =
+            String(
+                conta.nome ||
+                ""
+            ).trim();
+
+
+        /* =====================================
+           NOME DO USUÁRIO
+           -------------------------------------
+           Usamos o campo "usuario".
+        ====================================== */
+
+        const nomeUsuario =
+            String(
+                conta.usuario ||
+                ""
+            ).trim();
+
+
+        /* =====================================
+           NOME NO CENTRO
+        ====================================== */
+
+        if (
+            nomePrincipal &&
+            nomeEmpresa
+        ) {
+
+            nomePrincipal.textContent =
+                nomeEmpresa;
+
+        }
+
+
+        /* =====================================
+           NOME NO TOPO
+        ====================================== */
+
+        if (nomeMenu) {
+
+            nomeMenu.textContent =
+                nomeUsuario ||
+                nomeEmpresa ||
+                "Usuário";
+
+        }
+
+
+        /* =====================================
+           AVATAR
+           -------------------------------------
+           Agora usa a primeira letra
+           do nome do usuário.
+        ====================================== */
+
+        if (avatar) {
+
+            const nomeParaAvatar =
+                nomeUsuario ||
+                nomeEmpresa ||
+                "U";
+
+            avatar.textContent =
+                nomeParaAvatar
+                    .charAt(0)
+                    .toUpperCase();
+
+        }
+
+    } catch (erro) {
+
+        console.error(
+            "Erro ao carregar usuário:",
+            erro
         );
 
-        return;
-
     }
-
-
-    const conta =
-        JSON.parse(
-            dados
-        );
-
-
-    if (
-        !conta ||
-        !conta.nome
-    ) {
-
-        return;
-
-    }
-
-
-    const nome =
-        String(
-            conta.nome
-        ).trim();
-
-
-    if (!nome) {
-
-        return;
-
-    }
-
-
-    if (nomePrincipal) {
-
-        nomePrincipal.textContent =
-            nome;
-
-    }
-
-
-    if (nomeMenu) {
-
-        nomeMenu.textContent =
-            nome;
-
-    }
-
-
-    if (avatar) {
-
-        avatar.textContent =
-            nome
-                .charAt(0)
-                .toUpperCase();
-
-    }
-
-
-} catch (erro) {
-
-    console.error(
-        "Erro ao carregar usuário:",
-        erro
-    );
-
-}
 
 }
 

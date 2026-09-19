@@ -12,285 +12,36 @@
 
     <title>Gestok | Meus chamados</title>
 
+
+    <!-- CSS DA PÁGINA -->
+
     <link
         rel="stylesheet"
         href="style.css"
     >
 
+
+    <!-- CSS DA SIDEBAR UNIVERSAL -->
+
+    <link
+        rel="stylesheet"
+        href="../../componentes/sidebar.css"
+    >
+
 </head>
+
 
 <body>
 
 
     <!-- =========================================
-         OVERLAY
+         SIDEBAR UNIVERSAL
     ========================================== -->
 
     <div
-        class="overlay"
-        id="overlay"
+        id="gestok-sidebar-container"
     ></div>
 
-
-    <!-- =========================================
-         SIDEBAR
-    ========================================== -->
-
-    <aside
-        class="sidebar"
-        id="sidebar"
-    >
-
-        <div class="sidebar-top">
-
-            <a
-                class="brand"
-                href="../../sistema/index.html"
-            >
-
-                <div class="brand-icon">
-                    G
-                </div>
-
-                <div class="brand-text">
-
-                    <strong>
-                        Gestok
-                    </strong>
-
-                    <small>
-                        Gestão de estoque
-                    </small>
-
-                </div>
-
-            </a>
-
-
-            <button
-                class="close-sidebar"
-                id="closeSidebar"
-                type="button"
-                aria-label="Fechar menu"
-            >
-                ×
-            </button>
-
-        </div>
-
-
-        <nav class="navigation">
-
-
-            <span class="nav-title">
-                PRINCIPAL
-            </span>
-
-
-            <a
-                class="nav-item"
-                href="../../sistema/index.html"
-            >
-
-                <span class="nav-icon">
-                    ⌂
-                </span>
-
-                <span>
-                    Dashboard
-                </span>
-
-            </a>
-
-
-            <a
-                class="nav-item"
-                href="../../produtos/consulta/index.html"
-            >
-
-                <span class="nav-icon">
-                    ▣
-                </span>
-
-                <span>
-                    Produtos
-                </span>
-
-            </a>
-
-
-            <a
-                class="nav-item nav-create-product"
-                href="../../produtos/index.html#novo"
-            >
-
-                <span class="nav-icon">
-                    ＋
-                </span>
-
-                <div class="create-product-text">
-
-                    <strong>
-                        Criar produto
-                    </strong>
-
-                    <small>
-                        Novo item no estoque
-                    </small>
-
-                </div>
-
-            </a>
-
-
-            <span class="nav-title">
-                ESTOQUE
-            </span>
-
-
-            <a
-                class="nav-item"
-                href="../../entrada/index.html"
-            >
-
-                <span class="nav-icon">
-                    ↓
-                </span>
-
-                <span>
-                    Entrada
-                </span>
-
-            </a>
-
-
-            <a
-                class="nav-item"
-                href="../../saida/index.html"
-            >
-
-                <span class="nav-icon">
-                    ↑
-                </span>
-
-                <span>
-                    Saída
-                </span>
-
-            </a>
-
-
-            <a
-                class="nav-item"
-                href="../../movimentacoes/index.html"
-            >
-
-                <span class="nav-icon">
-                    ↔
-                </span>
-
-                <span>
-                    Movimentações
-                </span>
-
-            </a>
-
-
-            <span class="nav-title">
-                GESTÃO
-            </span>
-
-
-            <a
-                class="nav-item"
-                href="../../relatorios/index.html"
-            >
-
-                <span class="nav-icon">
-                    ▤
-                </span>
-
-                <span>
-                    Relatórios
-                </span>
-
-            </a>
-
-
-            <a
-                class="nav-item"
-                href="../../solicitacoes/index.html"
-            >
-
-                <span class="nav-icon">
-                    □
-                </span>
-
-                <span>
-                    Solicitações
-                </span>
-
-            </a>
-
-
-            <a
-                class="nav-item"
-                href="../../perfil/index.html"
-            >
-
-                <span class="nav-icon">
-                    ◉
-                </span>
-
-                <span>
-                    Perfil
-                </span>
-
-            </a>
-
-
-            <span class="nav-title">
-                AJUDA
-            </span>
-
-
-            <a
-                class="nav-item active"
-                href="../index.html"
-            >
-
-                <span class="nav-icon">
-                    ?
-                </span>
-
-                <span>
-                    Suporte
-                </span>
-
-            </a>
-
-        </nav>
-
-
-        <div class="system-status">
-
-            <span class="status-dot"></span>
-
-            <div>
-
-                <strong>
-                    Sistema online
-                </strong>
-
-                <small>
-                    Todas as funções funcionando
-                </small>
-
-            </div>
-
-        </div>
-
-    </aside>
 
 
     <!-- =========================================
@@ -337,12 +88,15 @@
         </section>
 
 
+
         <!-- =====================================
              RESUMO
         ====================================== -->
 
         <section class="summary-grid">
 
+
+            <!-- TOTAL -->
 
             <div class="summary-card">
 
@@ -365,6 +119,9 @@
             </div>
 
 
+
+            <!-- ABERTOS -->
+
             <div class="summary-card">
 
                 <div class="summary-icon orange">
@@ -385,6 +142,9 @@
 
             </div>
 
+
+
+            <!-- RESOLVIDOS -->
 
             <div class="summary-card">
 
@@ -410,6 +170,7 @@
         </section>
 
 
+
         <!-- =====================================
              FILTROS
         ====================================== -->
@@ -417,6 +178,9 @@
         <section class="panel">
 
             <div class="filters">
+
+
+                <!-- BUSCA -->
 
                 <div class="search-field">
 
@@ -428,10 +192,14 @@
                         type="search"
                         id="buscaChamado"
                         placeholder="Buscar chamado..."
+                        autocomplete="off"
                     >
 
                 </div>
 
+
+
+                <!-- STATUS -->
 
                 <select id="filtroStatus">
 
@@ -457,9 +225,11 @@
 
                 </select>
 
+
             </div>
 
         </section>
+
 
 
         <!-- =====================================
@@ -485,11 +255,17 @@
             </div>
 
 
+
+            <!-- LISTA DOS CHAMADOS -->
+
             <div
                 class="tickets-list"
                 id="ticketsList"
             ></div>
 
+
+
+            <!-- ESTADO VAZIO -->
 
             <div
                 class="empty-state"
@@ -511,7 +287,9 @@
 
             </div>
 
+
         </section>
+
 
 
         <!-- =====================================
@@ -532,6 +310,7 @@
         </div>
 
 
+
         <!-- =====================================
              MODAL DETALHES
         ====================================== -->
@@ -543,6 +322,8 @@
 
             <div class="modal">
 
+
+                <!-- CABEÇALHO -->
 
                 <div class="modal-header">
 
@@ -564,16 +345,26 @@
                         id="fecharDetalhes"
                         type="button"
                     >
+
                         ×
+
                     </button>
 
                 </div>
 
 
+
+                <!-- DETALHES -->
+
                 <div class="ticket-details">
 
 
+                    <!-- GRID -->
+
                     <div class="detail-grid">
+
+
+                        <!-- NÚMERO -->
 
                         <div class="detail-box">
 
@@ -588,6 +379,9 @@
                         </div>
 
 
+
+                        <!-- STATUS -->
+
                         <div class="detail-box">
 
                             <span>
@@ -600,6 +394,9 @@
 
                         </div>
 
+
+
+                        <!-- CATEGORIA -->
 
                         <div class="detail-box">
 
@@ -614,6 +411,9 @@
                         </div>
 
 
+
+                        <!-- DATA -->
+
                         <div class="detail-box">
 
                             <span>
@@ -626,8 +426,12 @@
 
                         </div>
 
+
                     </div>
 
+
+
+                    <!-- DESCRIÇÃO -->
 
                     <div class="detail-section">
 
@@ -645,6 +449,9 @@
 
                     </div>
 
+
+
+                    <!-- RESPOSTA -->
 
                     <div class="detail-section">
 
@@ -671,6 +478,9 @@
                 </div>
 
 
+
+                <!-- RODAPÉ -->
+
                 <div class="modal-footer">
 
                     <button
@@ -678,10 +488,13 @@
                         id="fecharDetalhesBtn"
                         type="button"
                     >
+
                         Fechar
+
                     </button>
 
                 </div>
+
 
             </div>
 
@@ -691,17 +504,84 @@
     </main>
 
 
+
+    <!-- =========================================
+         FIREBASE
+    ========================================== -->
+
     <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+
     <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+
     <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+
+
+
+    <!-- =========================================
+         CONFIGURAÇÃO FIREBASE
+    ========================================== -->
+
     <script src="../../firebase/config.js"></script>
-    <script>if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);</script>
+
+
+
+    <!-- =========================================
+         INICIALIZAÇÃO SEGURA
+    ========================================== -->
+
+    <script>
+
+        if (
+            typeof firebase !== "undefined" &&
+            typeof firebaseConfig !== "undefined"
+        ) {
+
+            if (!firebase.apps.length) {
+
+                firebase.initializeApp(
+                    firebaseConfig
+                );
+
+            }
+
+        }
+
+    </script>
+
+
+
+    <!-- =========================================
+         FIREBASE AUTH / FIRESTORE
+    ========================================== -->
+
     <script src="../../firebase/auth.js"></script>
+
     <script src="../../firebase/firestore.js"></script>
+
+
+
+    <!-- =========================================
+         AUTH CENTRAL DO GESTOK
+    ========================================== -->
 
     <script src="../../auth.js"></script>
 
+
+
+    <!-- =========================================
+         SIDEBAR UNIVERSAL
+    ========================================== -->
+
+    <script src="../../componentes/sidebar.js"></script>
+
+
+
+    <!-- =========================================
+         SCRIPT DOS CHAMADOS
+    ========================================== -->
+
     <script src="script.js"></script>
+
 
 </body>
 

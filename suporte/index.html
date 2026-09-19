@@ -16,15 +16,27 @@
         rel="stylesheet"
         href="style.css"
     >
-        <link
+
+    <link
         rel="stylesheet"
         href="../componentes/sidebar.css"
     >
 
 </head>
 
+
 <body>
-    <div id="gestok-sidebar-container"></div>
+
+
+    <!-- =========================================
+         SIDEBAR UNIVERSAL
+    ========================================== -->
+
+    <div
+        id="gestok-sidebar-container"
+    ></div>
+
+
     <!-- =========================================
          HEADER
     ========================================== -->
@@ -77,6 +89,10 @@
     <main class="main-content">
 
 
+        <!-- =====================================
+             HERO
+        ====================================== -->
+
         <section class="hero">
 
             <div>
@@ -100,7 +116,9 @@
 
 
 
-        <!-- BUSCA -->
+        <!-- =====================================
+             BUSCA
+        ====================================== -->
 
         <section class="support-search">
 
@@ -125,6 +143,8 @@
 
         <section class="support-options">
 
+
+            <!-- PERGUNTAS FREQUENTES -->
 
             <button
                 class="support-card"
@@ -157,6 +177,8 @@
 
 
 
+            <!-- ABRIR CHAMADO -->
+
             <button
                 class="support-card"
                 type="button"
@@ -188,9 +210,7 @@
 
 
 
-            <!-- =====================================
-                 MEUS CHAMADOS
-            ====================================== -->
+            <!-- MEUS CHAMADOS -->
 
             <a
                 class="support-card support-card-link-card"
@@ -220,7 +240,6 @@
                 </b>
 
             </a>
-
 
         </section>
 
@@ -255,6 +274,8 @@
             <div class="faq-list">
 
 
+                <!-- FAQ 1 -->
+
                 <button
                     class="faq-item"
                     type="button"
@@ -274,15 +295,19 @@
                 <div class="faq-answer">
 
                     <p>
+
                         Acesse o menu
                         <strong>Criar produto</strong>,
                         preencha as informações do produto
                         e salve o cadastro.
+
                     </p>
 
                 </div>
 
 
+
+                <!-- FAQ 2 -->
 
                 <button
                     class="faq-item"
@@ -303,16 +328,20 @@
                 <div class="faq-answer">
 
                     <p>
+
                         Acesse
                         <strong>Entrada</strong>,
                         selecione o produto,
                         informe a quantidade e confirme
                         a movimentação.
+
                     </p>
 
                 </div>
 
 
+
+                <!-- FAQ 3 -->
 
                 <button
                     class="faq-item"
@@ -333,16 +362,20 @@
                 <div class="faq-answer">
 
                     <p>
+
                         Acesse
                         <strong>Saída</strong>,
                         selecione o produto,
                         informe a quantidade retirada
                         e confirme a operação.
+
                     </p>
 
                 </div>
 
 
+
+                <!-- FAQ 4 -->
 
                 <button
                     class="faq-item"
@@ -363,15 +396,19 @@
                 <div class="faq-answer">
 
                     <p>
+
                         Acesse
                         <strong>Movimentações</strong>
                         para consultar todas as entradas
                         e saídas registradas.
+
                     </p>
 
                 </div>
 
 
+
+                <!-- FAQ 5 -->
 
                 <button
                     class="faq-item"
@@ -392,12 +429,14 @@
                 <div class="faq-answer">
 
                     <p>
+
                         Acesse
                         <strong>Relatórios</strong>,
                         escolha o tipo de relatório,
                         aplique os filtros desejados
                         e clique em
                         <strong>Gerar PDF</strong>.
+
                     </p>
 
                 </div>
@@ -497,8 +536,11 @@
                 </div>
 
 
+
                 <form id="formChamado">
 
+
+                    <!-- ASSUNTO -->
 
                     <div class="form-group">
 
@@ -516,6 +558,9 @@
 
                     </div>
 
+
+
+                    <!-- CATEGORIA -->
 
                     <div class="form-group">
 
@@ -562,6 +607,9 @@
                     </div>
 
 
+
+                    <!-- MENSAGEM -->
+
                     <div class="form-group">
 
                         <label for="mensagem">
@@ -579,6 +627,9 @@
                     </div>
 
 
+
+                    <!-- AÇÕES -->
+
                     <div class="modal-actions">
 
                         <button
@@ -588,6 +639,7 @@
                         >
                             Cancelar
                         </button>
+
 
                         <button
                             class="primary-button"
@@ -614,15 +666,58 @@
     <!-- =========================================
          SCRIPTS
     ========================================== -->
+
+
+    <!-- SIDEBAR -->
+
     <script src="../componentes/sidebar.js"></script>
+
+
+    <!-- FIREBASE -->
+
     <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+
     <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+
     <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+
+
+    <!-- CONFIGURAÇÃO FIREBASE -->
+
     <script src="../firebase/config.js"></script>
-    <script>firebase.initializeApp(firebaseConfig);</script>
+
+
+    <!-- INICIALIZAÇÃO SEGURA -->
+
+    <script>
+
+        if (
+            typeof firebase !== "undefined" &&
+            typeof firebaseConfig !== "undefined"
+        ) {
+
+            if (!firebase.apps.length) {
+
+                firebase.initializeApp(
+                    firebaseConfig
+                );
+
+            }
+
+        }
+
+    </script>
+
+
+    <!-- AUTENTICAÇÃO GESTOK -->
 
     <script src="../auth.js"></script>
+
+
+    <!-- SCRIPT DO SUPORTE -->
+
     <script src="script.js"></script>
+
 
 </body>
 

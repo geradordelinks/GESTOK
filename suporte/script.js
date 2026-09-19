@@ -44,9 +44,6 @@ const cancelarChamado =
 const formChamado =
     document.getElementById("formChamado");
 
-const meusChamados =
-    document.getElementById("meusChamados");
-
 
 /* =========================================
    MENU
@@ -62,7 +59,8 @@ function abrirMenu() {
         overlay.classList.add("active");
     }
 
-    document.body.style.overflow = "hidden";
+    document.body.style.overflow =
+        "hidden";
 
 }
 
@@ -77,7 +75,8 @@ function fecharMenu() {
         overlay.classList.remove("active");
     }
 
-    document.body.style.overflow = "";
+    document.body.style.overflow =
+        "";
 
 }
 
@@ -142,9 +141,12 @@ function abrirModal() {
         return;
     }
 
-    modalChamado.classList.add("active");
+    modalChamado.classList.add(
+        "active"
+    );
 
-    document.body.style.overflow = "hidden";
+    document.body.style.overflow =
+        "hidden";
 
 }
 
@@ -155,9 +157,12 @@ function fecharModal() {
         return;
     }
 
-    modalChamado.classList.remove("active");
+    modalChamado.classList.remove(
+        "active"
+    );
 
-    document.body.style.overflow = "";
+    document.body.style.overflow =
+        "";
 
 }
 
@@ -193,7 +198,7 @@ if (cancelarChamado) {
 
 
 /* =========================================
-   FECHAR MODAL CLICANDO FORA
+   FECHAR CLICANDO FORA
 ========================================= */
 
 if (modalChamado) {
@@ -203,7 +208,8 @@ if (modalChamado) {
         function (event) {
 
             if (
-                event.target === modalChamado
+                event.target ===
+                modalChamado
             ) {
 
                 fecharModal();
@@ -268,9 +274,13 @@ faqItems.forEach(
                     answer
                 ) {
 
-                    this.classList.add("open");
+                    this.classList.add(
+                        "open"
+                    );
 
-                    answer.classList.add("open");
+                    answer.classList.add(
+                        "open"
+                    );
 
                 }
 
@@ -282,56 +292,7 @@ faqItems.forEach(
 
 
 /* =========================================
-   DADOS DO FAQ
-========================================= */
-
-const perguntasFAQ = [
-
-    {
-        pergunta:
-            "Como cadastrar um produto?",
-
-        resposta:
-            "Acesse o menu Criar produto, preencha as informações do produto e salve o cadastro."
-    },
-
-    {
-        pergunta:
-            "Como registrar uma entrada?",
-
-        resposta:
-            "Acesse Entrada, selecione o produto, informe a quantidade e confirme a movimentação."
-    },
-
-    {
-        pergunta:
-            "Como registrar uma saída?",
-
-        resposta:
-            "Acesse Saída, selecione o produto, informe a quantidade retirada e confirme a operação."
-    },
-
-    {
-        pergunta:
-            "Onde vejo o histórico do estoque?",
-
-        resposta:
-            "Acesse Movimentações para consultar todas as entradas e saídas registradas."
-    },
-
-    {
-        pergunta:
-            "Como gerar um relatório?",
-
-        resposta:
-            "Acesse Relatórios, escolha o tipo de relatório, aplique os filtros desejados e clique em Gerar PDF."
-    }
-
-];
-
-
-/* =========================================
-   BUSCAR FAQ
+   BUSCA FAQ
 ========================================= */
 
 function pesquisarFAQ() {
@@ -350,8 +311,7 @@ function pesquisarFAQ() {
         function (item) {
 
             const pergunta =
-                item
-                    .textContent
+                item.textContent
                     .trim()
                     .toLowerCase();
 
@@ -364,18 +324,22 @@ function pesquisarFAQ() {
                 pergunta.includes(termo)
             ) {
 
-                item.style.display = "flex";
+                item.style.display =
+                    "flex";
 
                 if (answer) {
-                    answer.style.display = "";
+                    answer.style.display =
+                        "";
                 }
 
             } else {
 
-                item.style.display = "none";
+                item.style.display =
+                    "none";
 
                 if (answer) {
-                    answer.style.display = "none";
+                    answer.style.display =
+                        "none";
                 }
 
             }
@@ -405,36 +369,15 @@ supportCards.forEach(
 
         card.addEventListener(
             "click",
-            function (event) {
+            function () {
 
                 const destino =
                     this.dataset.open;
 
 
-                /* =============================
-                   MEUS CHAMADOS
-                ============================= */
-
                 if (
-                    this.id === "meusChamados"
-                ) {
-
-                    event.preventDefault();
-
-                    window.location.href =
-                        "chamados/index.html";
-
-                    return;
-
-                }
-
-
-                /* =============================
-                   FAQ
-                ============================= */
-
-                if (
-                    destino === "faq"
+                    destino ===
+                    "faq"
                 ) {
 
                     const faq =
@@ -445,28 +388,23 @@ supportCards.forEach(
                     if (faq) {
 
                         faq.scrollIntoView({
-                            behavior: "smooth",
-                            block: "start"
+                            behavior:
+                                "smooth",
+                            block:
+                                "start"
                         });
 
                     }
 
-                    return;
-
                 }
 
 
-                /* =============================
-                   ABRIR CHAMADO
-                ============================= */
-
                 if (
-                    destino === "chamado"
+                    destino ===
+                    "chamado"
                 ) {
 
                     abrirModal();
-
-                    return;
 
                 }
 
@@ -478,43 +416,48 @@ supportCards.forEach(
 
 
 /* =========================================
-   LOCAL STORAGE
+   CONTA DO USUÁRIO
 ========================================= */
 
-const CHAVE_CHAMADOS =
-    "gestok_chamados";
-
-
-function obterChamados() {
-
-    const dados =
-        localStorage.getItem(
-            CHAVE_CHAMADOS
-        );
-
-
-    if (!dados) {
-        return [];
-    }
-
+function obterContaGestokSuporte() {
 
     try {
 
-        const chamados =
+        const dados =
+            localStorage.getItem(
+                "gestok_conta"
+            );
+
+
+        if (!dados) {
+            return null;
+        }
+
+
+        const conta =
             JSON.parse(dados);
 
-        return Array.isArray(chamados)
-            ? chamados
-            : [];
+
+        if (
+            !conta ||
+            typeof conta !== "object"
+        ) {
+
+            return null;
+
+        }
+
+
+        return conta;
 
     } catch (erro) {
 
         console.error(
-            "Erro ao carregar chamados:",
+            "Erro ao carregar conta do Gestok:",
             erro
         );
 
-        return [];
+        return null;
 
     }
 
@@ -522,15 +465,73 @@ function obterChamados() {
 
 
 /* =========================================
-   SALVAR CHAMADOS
+   USUÁRIO FIREBASE
 ========================================= */
 
-function salvarChamados(chamados) {
+function obterUsuarioFirebaseSuporte() {
 
-    localStorage.setItem(
-        CHAVE_CHAMADOS,
-        JSON.stringify(chamados)
-    );
+    try {
+
+        if (
+            typeof firebase ===
+                "undefined" ||
+            !firebase.auth
+        ) {
+
+            return null;
+
+        }
+
+
+        return firebase
+            .auth()
+            .currentUser || null;
+
+    } catch (erro) {
+
+        console.error(
+            "Erro ao obter usuário Firebase:",
+            erro
+        );
+
+        return null;
+
+    }
+
+}
+
+
+/* =========================================
+   ESCAPAR HTML
+========================================= */
+
+function escaparHtmlSuporte(
+    texto
+) {
+
+    return String(
+        texto ?? ""
+    )
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+        .replace(
+            /</g,
+            "&lt;"
+        )
+        .replace(
+            />/g,
+            "&gt;"
+        )
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+        .replace(
+            /'/g,
+            "&#039;"
+        );
 
 }
 
@@ -545,53 +546,53 @@ function gerarIdChamado() {
         Date.now().toString(36) +
         Math.random()
             .toString(36)
-            .substring(2, 7)
+            .substring(2, 8)
     );
 
 }
 
 
 /* =========================================
-   DATA DO CHAMADO
+   GERAR NÚMERO DO CHAMADO
 ========================================= */
 
-function obterDataAtual() {
+function gerarNumeroChamado() {
 
     const agora =
         new Date();
 
-
-    const dia =
-        String(
-            agora.getDate()
-        ).padStart(2, "0");
-
+    const ano =
+        agora.getFullYear();
 
     const mes =
         String(
             agora.getMonth() + 1
         ).padStart(2, "0");
 
-
-    const ano =
-        agora.getFullYear();
-
-
-    const hora =
+    const dia =
         String(
-            agora.getHours()
+            agora.getDate()
         ).padStart(2, "0");
 
-
-    const minuto =
+    const sequencia =
         String(
-            agora.getMinutes()
-        ).padStart(2, "0");
-
+            Date.now()
+        ).slice(-6);
 
     return (
-        `${dia}/${mes}/${ano} ${hora}:${minuto}`
+        `${ano}${mes}${dia}-${sequencia}`
     );
+
+}
+
+
+/* =========================================
+   DATA ATUAL
+========================================= */
+
+function obterDataAtual() {
+
+    return new Date();
 
 }
 
@@ -604,28 +605,34 @@ if (formChamado) {
 
     formChamado.addEventListener(
         "submit",
-        function (event) {
+        async function (event) {
 
             event.preventDefault();
 
 
             const assunto =
                 document
-                    .getElementById("assunto")
+                    .getElementById(
+                        "assunto"
+                    )
                     ?.value
                     .trim();
 
 
             const categoria =
                 document
-                    .getElementById("categoria")
+                    .getElementById(
+                        "categoria"
+                    )
                     ?.value
                     .trim();
 
 
             const mensagem =
                 document
-                    .getElementById("mensagem")
+                    .getElementById(
+                        "mensagem"
+                    )
                     ?.value
                     .trim();
 
@@ -645,111 +652,204 @@ if (formChamado) {
             }
 
 
-            const chamados =
-                obterChamados();
+            try {
+
+                /* =================================
+                   FIREBASE DISPONÍVEL?
+                ================================= */
+
+                if (
+                    typeof firebase ===
+                        "undefined" ||
+                    !firebase.firestore
+                ) {
+
+                    throw new Error(
+                        "Firebase Firestore não está disponível."
+                    );
+
+                }
 
 
-            const novoChamado = {
+                /* =================================
+                   CONTA
+                ================================= */
 
-                id:
-                    gerarIdChamado(),
-
-                numero:
-                    gerarNumeroChamado(
-                        chamados
-                    ),
-
-                assunto:
-                    assunto,
-
-                categoria:
-                    categoria,
-
-                mensagem:
-                    mensagem,
-
-                status:
-                    "Aberto",
-
-                data:
-                    obterDataAtual()
-
-            };
+                const conta =
+                    obterContaGestokSuporte();
 
 
-            chamados.unshift(
-                novoChamado
-            );
+                if (!conta) {
+
+                    throw new Error(
+                        "Conta Gestok não encontrada."
+                    );
+
+                }
 
 
-            salvarChamados(
-                chamados
-            );
+                if (!conta.lojaId) {
+
+                    throw new Error(
+                        "Loja do usuário não encontrada."
+                    );
+
+                }
 
 
-            formChamado.reset();
+                /* =================================
+                   USUÁRIO FIREBASE
+                ================================= */
 
-            fecharModal();
-
-
-            mostrarMensagem(
-                `Chamado #${novoChamado.numero} enviado com sucesso!`
-            );
+                const usuarioFirebase =
+                    obterUsuarioFirebaseSuporte();
 
 
-            console.log(
-                "Novo chamado:",
-                novoChamado
-            );
+                if (!usuarioFirebase) {
 
-        }
-    );
+                    throw new Error(
+                        "Usuário não autenticado no Firebase."
+                    );
 
-}
+                }
 
 
-/* =========================================
-   NÚMERO DO CHAMADO
-========================================= */
+                /* =================================
+                   DADOS
+                ================================= */
 
-function gerarNumeroChamado(
-    chamados
-) {
-
-    let maiorNumero = 0;
+                const numero =
+                    gerarNumeroChamado();
 
 
-    chamados.forEach(
-        function (chamado) {
+                const agora =
+                    firebase.firestore.Timestamp.fromDate(
+                        obterDataAtual()
+                    );
 
-            const numero =
-                Number(
-                    chamado.numero
+
+                const novoChamado = {
+
+                    numero:
+                        numero,
+
+                    assunto:
+                        assunto,
+
+                    categoria:
+                        categoria,
+
+                    mensagem:
+                        mensagem,
+
+                    status:
+                        "Aberto",
+
+                    uid:
+                        usuarioFirebase.uid,
+
+                    usuario:
+                        conta.usuario ||
+                        "",
+
+                    email:
+                        conta.email ||
+                        usuarioFirebase.email ||
+                        "",
+
+                    lojaId:
+                        conta.lojaId,
+
+                    codigoLoja:
+                        conta.codigoLoja ||
+                        "",
+
+                    criadoEm:
+                        agora,
+
+                    atualizadoEm:
+                        agora,
+
+                    ultimaResposta:
+                        null,
+
+                    respondidoPor:
+                        null
+
+                };
+
+
+                /* =================================
+                   SALVAR NO FIRESTORE
+                ================================= */
+
+                const referencia =
+                    firebase
+                        .firestore()
+                        .collection(
+                            "lojas"
+                        )
+                        .doc(
+                            conta.lojaId
+                        )
+                        .collection(
+                            "chamados"
+                        )
+                        .doc(
+                            gerarIdChamado()
+                        );
+
+
+                await referencia.set(
+                    novoChamado
                 );
 
 
-            if (
-                Number.isFinite(numero) &&
-                numero > maiorNumero
-            ) {
+                /* =================================
+                   LIMPAR FORMULÁRIO
+                ================================= */
 
-                maiorNumero = numero;
+                formChamado.reset();
+
+                fecharModal();
+
+
+                /* =================================
+                   SUCESSO
+                ================================= */
+
+                mostrarMensagem(
+                    `Chamado #${numero} enviado com sucesso!`
+                );
+
+
+                console.log(
+                    "Chamado criado no Firestore:",
+                    novoChamado
+                );
+
+            } catch (erro) {
+
+                console.error(
+                    "Erro ao enviar chamado:",
+                    erro
+                );
+
+
+                mostrarMensagem(
+                    "Não foi possível enviar o chamado. Tente novamente."
+                );
 
             }
 
         }
     );
 
-
-    return String(
-        maiorNumero + 1
-    ).padStart(4, "0");
-
 }
 
 
 /* =========================================
-   MENSAGEM / TOAST
+   TOAST
 ========================================= */
 
 function mostrarMensagem(
@@ -790,7 +890,7 @@ function mostrarMensagem(
             </strong>
 
             <span>
-                ${mensagem}
+                ${escaparHtmlSuporte(mensagem)}
             </span>
 
         </div>
@@ -801,22 +901,49 @@ function mostrarMensagem(
     Object.assign(
         toast.style,
         {
-            position: "fixed",
-            right: "22px",
-            bottom: "22px",
-            zIndex: "20000",
-            display: "flex",
-            alignItems: "center",
-            gap: "11px",
-            width: "min(380px, calc(100% - 32px))",
-            padding: "13px 15px",
-            background: "#ffffff",
-            border: "1px solid #e5eaf1",
-            borderRadius: "12px",
+
+            position:
+                "fixed",
+
+            right:
+                "22px",
+
+            bottom:
+                "22px",
+
+            zIndex:
+                "20000",
+
+            display:
+                "flex",
+
+            alignItems:
+                "center",
+
+            gap:
+                "11px",
+
+            width:
+                "min(380px, calc(100% - 32px))",
+
+            padding:
+                "13px 15px",
+
+            background:
+                "#ffffff",
+
+            border:
+                "1px solid #e5eaf1",
+
+            borderRadius:
+                "12px",
+
             boxShadow:
                 "0 15px 40px rgba(15, 23, 42, .14)",
+
             animation:
                 "gestokToastIn .25s ease"
+
         }
     );
 
@@ -855,7 +982,9 @@ function mostrarMensagem(
             color: #16a34a;
 
             display: flex;
+
             align-items: center;
+
             justify-content: center;
 
             font-weight: 700;
@@ -904,7 +1033,8 @@ function mostrarMensagem(
     setTimeout(
         function () {
 
-            toast.style.opacity = "0";
+            toast.style.opacity =
+                "0";
 
             toast.style.transform =
                 "translateY(10px)";
