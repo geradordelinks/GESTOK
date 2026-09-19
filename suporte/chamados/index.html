@@ -451,28 +451,75 @@
 
 
 
-                    <!-- RESPOSTA -->
+                    <!-- CONVERSA -->
 
                     <div class="detail-section">
 
                         <h4>
-                            Resposta do suporte
+                            Conversa
                         </h4>
 
                         <div
-                            class="support-response"
-                            id="respostaSuporte"
+                            class="ticket-conversation"
+                            id="mensagensChamado"
                         >
 
-                            <p>
-                                Seu chamado foi recebido.
-                                Nossa equipe analisará a solicitação
-                                e responderá assim que possível.
-                            </p>
+                            <div class="conversation-empty">
+                                Carregando conversa...
+                            </div>
 
                         </div>
 
                     </div>
+
+
+                    <!-- RESPONDER -->
+
+                    <div class="detail-section">
+
+                        <h4>
+                            Responder
+                        </h4>
+
+                        <form
+                            class="ticket-reply-form"
+                            id="formResponderChamado"
+                        >
+
+                            <textarea
+                                id="mensagemRespostaCliente"
+                                rows="4"
+                                maxlength="2000"
+                                placeholder="Digite sua resposta..."
+                                required
+                            ></textarea>
+
+                            <button
+                                type="submit"
+                                class="primary-button"
+                                id="btnEnviarRespostaCliente"
+                            >
+                                Enviar resposta
+                                →
+                            </button>
+
+                            <div
+                                class="reply-status"
+                                id="statusRespostaCliente"
+                            ></div>
+
+                        </form>
+
+                    </div>
+
+
+                    <!-- COMPATIBILIDADE -->
+
+                    <div
+                        class="support-response"
+                        id="respostaSuporte"
+                        hidden
+                    ></div>
 
 
                 </div>
