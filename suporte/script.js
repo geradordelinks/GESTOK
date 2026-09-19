@@ -46,6 +46,20 @@ const formChamado =
 
 
 /* =========================================
+   ESTADO DA AUTENTICAÇÃO
+========================================= */
+
+let usuarioFirebaseSuporte =
+    null;
+
+let autenticacaoSuportePronta =
+    false;
+
+let promessaAutenticacaoSuporte =
+    null;
+
+
+/* =========================================
    MENU
 ========================================= */
 
@@ -465,6 +479,107 @@ function obterContaGestokSuporte() {
 
 
 /* =========================================
+   CONTEXTO CENTRAL DO GESTOK
+========================================= */
+
+function obterContextoSuporte() {
+
+    try {
+
+        if (
+            typeof obterContextoGestok ===
+            "function"
+        ) {
+
+            return (
+                obterContextoGestok() ||
+                null
+            );
+
+        }
+
+    } catch (erro) {
+
+        console.error(
+            "Erro ao obter contexto do Gestok:",
+            erro
+        );
+
+    }
+
+    return null;
+
+}
+
+
+/* =========================================
+   OBTER LOJA ATUAL
+========================================= */
+
+function obterLojaAtualSuporte() {
+
+    try {
+
+        if (
+            typeof obterLojaAtualGestok ===
+            "function"
+        ) {
+
+            const lojaId =
+                obterLojaAtualGestok();
+
+            if (lojaId) {
+
+                return lojaId;
+
+            }
+
+        }
+
+    } catch (erro) {
+
+        console.error(
+            "Erro ao obter loja atual:",
+            erro
+        );
+
+    }
+
+
+    const contexto =
+        obterContextoSuporte();
+
+
+    if (
+        contexto &&
+        contexto.lojaId
+    ) {
+
+        return contexto.lojaId;
+
+    }
+
+
+    const conta =
+        obterContaGestokSuporte();
+
+
+    if (
+        conta &&
+        conta.lojaId
+    ) {
+
+        return conta.lojaId;
+
+    }
+
+
+    return null;
+
+}
+
+
+/* =========================================
    USUÁRIO FIREBASE
 ========================================= */
 
@@ -497,6 +612,218 @@ function obterUsuarioFirebaseSuporte() {
         return null;
 
     }
+
+}
+
+
+/* =========================================
+   AGUARDAR FIREBASE RESTAURAR A SESSÃO
+========================================= */
+
+function aguardarAutenticacaoFirebaseSuporte() {
+
+    if (
+        autenticacaoSuportePronta &&
+        usuarioFirebaseSuporte
+    ) {
+
+        return Promise.resolve(
+            usuarioFirebaseSuporte
+        );
+
+    }
+
+
+    if (promessaAutenticacaoSuporte) {
+
+        return promessaAutenticacaoSuporte;
+
+    }
+
+
+    promessaAutenticacaoSuporte =
+        new Promise(
+            function (resolve, reject) {
+
+                try {
+
+                    if (
+                        typeof firebase ===
+                            "undefined" ||
+                        !firebase.auth
+                    ) {
+
+                        reject(
+                            new Error(
+                                "Firebase Authentication não está disponível."
+                            )
+                        );
+
+                        return;
+
+                    }
+
+
+                    const auth =
+                        firebase.auth();
+
+
+                    const usuarioAtual =
+                        auth.currentUser;
+
+
+                    if (usuarioAtual) {
+
+                        usuarioFirebaseSuporte =
+                            usuarioAtual;
+
+                        autenticacaoSuportePronta =
+                            true;
+
+                        resolve(
+                            usuarioAtual
+                        );
+
+                        return;
+
+                    }
+
+
+                    let finalizado =
+                        false;
+
+
+                    const encerrar =
+                        function () {
+
+                            if (
+                                !finalizado
+                            ) {
+
+                                finalizado =
+                                    true;
+
+                                unsubscribe();
+
+                            }
+
+                        };
+
+
+                    const unsubscribe =
+                        auth.onAuthStateChanged(
+                            function (usuario) {
+
+                                if (
+                                    finalizado
+                                ) {
+
+                                    return;
+
+                                }
+
+
+                                if (usuario) {
+
+                                    usuarioFirebaseSuporte =
+                                        usuario;
+
+                                    autenticacaoSuportePronta =
+                                        true;
+
+                                    encerrar();
+
+                                    resolve(
+                                        usuario
+                                    );
+
+                                    return;
+
+                                }
+
+
+                                encerrar();
+
+                                reject(
+                                    new Error(
+                                        "Usuário não autenticado no Firebase."
+                                    )
+                                );
+
+                            },
+                            function (erro) {
+
+                                encerrar();
+
+                                reject(
+                                    erro
+                                );
+
+                            }
+                        );
+
+
+                    setTimeout(
+                        function () {
+
+                            if (
+                                finalizado
+                            ) {
+
+                                return;
+
+                            }
+
+
+                            encerrar();
+
+
+                            const usuarioDepois =
+                                auth.currentUser;
+
+
+                            if (
+                                usuarioDepois
+                            ) {
+
+                                usuarioFirebaseSuporte =
+                                    usuarioDepois;
+
+                                autenticacaoSuportePronta =
+                                    true;
+
+                                resolve(
+                                    usuarioDepois
+                                );
+
+                                return;
+
+                            }
+
+
+                            reject(
+                                new Error(
+                                    "Tempo limite aguardando autenticação do Firebase."
+                                )
+                            );
+
+                        },
+                        10000
+                    );
+
+                } catch (erro) {
+
+                    reject(
+                        erro
+                    );
+
+                }
+
+            }
+        );
+
+
+    return promessaAutenticacaoSuporte;
 
 }
 
@@ -661,11 +988,29 @@ if (formChamado) {
                 if (
                     typeof firebase ===
                         "undefined" ||
-                    !firebase.firestore
+                    !firebase.firestore ||
+                    !firebase.auth
                 ) {
 
                     throw new Error(
-                        "Firebase Firestore não está disponível."
+                        "Firebase não está disponível."
+                    );
+
+                }
+
+
+                /* =================================
+                   AGUARDAR AUTENTICAÇÃO
+                ================================= */
+
+                const usuarioFirebase =
+                    await aguardarAutenticacaoFirebaseSuporte();
+
+
+                if (!usuarioFirebase) {
+
+                    throw new Error(
+                        "Usuário não autenticado no Firebase."
                     );
 
                 }
@@ -679,16 +1024,23 @@ if (formChamado) {
                     obterContaGestokSuporte();
 
 
-                if (!conta) {
+                /* =================================
+                   CONTEXTO
+                ================================= */
 
-                    throw new Error(
-                        "Conta Gestok não encontrada."
-                    );
-
-                }
+                const contexto =
+                    obterContextoSuporte();
 
 
-                if (!conta.lojaId) {
+                /* =================================
+                   LOJA
+                ================================= */
+
+                const lojaId =
+                    obterLojaAtualSuporte();
+
+
+                if (!lojaId) {
 
                     throw new Error(
                         "Loja do usuário não encontrada."
@@ -697,25 +1049,41 @@ if (formChamado) {
                 }
 
 
+                console.log(
+                    "Usuário autenticado:",
+                    usuarioFirebase.uid
+                );
+
+
+                console.log(
+                    "Loja do chamado:",
+                    lojaId
+                );
+
+
                 /* =================================
-                   USUÁRIO FIREBASE
+                   DADOS DO USUÁRIO
                 ================================= */
 
-                const usuarioFirebase =
-                    obterUsuarioFirebaseSuporte();
+                const usuarioNome =
+                    contexto?.usuario ||
+                    conta?.usuario ||
+                    "";
 
+                const emailUsuario =
+                    contexto?.email ||
+                    conta?.email ||
+                    usuarioFirebase.email ||
+                    "";
 
-                if (!usuarioFirebase) {
-
-                    throw new Error(
-                        "Usuário não autenticado no Firebase."
-                    );
-
-                }
+                const codigoLoja =
+                    contexto?.codigoLoja ||
+                    conta?.codigoLoja ||
+                    "";
 
 
                 /* =================================
-                   DADOS
+                   DADOS DO CHAMADO
                 ================================= */
 
                 const numero =
@@ -749,20 +1117,16 @@ if (formChamado) {
                         usuarioFirebase.uid,
 
                     usuario:
-                        conta.usuario ||
-                        "",
+                        usuarioNome,
 
                     email:
-                        conta.email ||
-                        usuarioFirebase.email ||
-                        "",
+                        emailUsuario,
 
                     lojaId:
-                        conta.lojaId,
+                        lojaId,
 
                     codigoLoja:
-                        conta.codigoLoja ||
-                        "",
+                        codigoLoja,
 
                     criadoEm:
                         agora,
@@ -780,7 +1144,7 @@ if (formChamado) {
 
 
                 /* =================================
-                   SALVAR NO FIRESTORE
+                   REFERÊNCIA
                 ================================= */
 
                 const referencia =
@@ -790,7 +1154,7 @@ if (formChamado) {
                             "lojas"
                         )
                         .doc(
-                            conta.lojaId
+                            lojaId
                         )
                         .collection(
                             "chamados"
@@ -799,6 +1163,10 @@ if (formChamado) {
                             gerarIdChamado()
                         );
 
+
+                /* =================================
+                   SALVAR
+                ================================= */
 
                 await referencia.set(
                     novoChamado
@@ -836,14 +1204,119 @@ if (formChamado) {
                 );
 
 
+                let mensagem =
+                    "Não foi possível enviar o chamado. Tente novamente.";
+
+
+                if (
+                    erro.message ===
+                    "Usuário não autenticado no Firebase."
+                ) {
+
+                    mensagem =
+                        "Sua sessão expirou. Recarregue a página e entre novamente.";
+
+                }
+
+
+                if (
+                    erro.message ===
+                    "Tempo limite aguardando autenticação do Firebase."
+                ) {
+
+                    mensagem =
+                        "O Firebase demorou para restaurar sua sessão. Recarregue a página.";
+
+                }
+
+
+                if (
+                    erro.message ===
+                    "Loja do usuário não encontrada."
+                ) {
+
+                    mensagem =
+                        "Sua loja não foi identificada. Recarregue a página e tente novamente.";
+
+                }
+
+
                 mostrarMensagem(
-                    "Não foi possível enviar o chamado. Tente novamente."
+                    mensagem
                 );
 
             }
 
         }
     );
+
+}
+
+
+/* =========================================
+   MONITORAR AUTENTICAÇÃO
+========================================= */
+
+function iniciarMonitoramentoAutenticacaoSuporte() {
+
+    try {
+
+        if (
+            typeof firebase ===
+                "undefined" ||
+            !firebase.auth
+        ) {
+
+            return;
+
+        }
+
+
+        firebase
+            .auth()
+            .onAuthStateChanged(
+                function (usuario) {
+
+                    usuarioFirebaseSuporte =
+                        usuario || null;
+
+                    autenticacaoSuportePronta =
+                        !!usuario;
+
+                    promessaAutenticacaoSuporte =
+                        usuario
+                            ? Promise.resolve(
+                                usuario
+                            )
+                            : null;
+
+
+                    if (usuario) {
+
+                        console.log(
+                            "Gestok - Usuário Firebase autenticado:",
+                            usuario.uid
+                        );
+
+                    } else {
+
+                        console.log(
+                            "Gestok - Nenhum usuário Firebase autenticado."
+                        );
+
+                    }
+
+                }
+            );
+
+    } catch (erro) {
+
+        console.error(
+            "Erro ao monitorar autenticação:",
+            erro
+        );
+
+    }
 
 }
 
@@ -1068,6 +1541,8 @@ function mostrarMensagem(
 document.addEventListener(
     "DOMContentLoaded",
     function () {
+
+        iniciarMonitoramentoAutenticacaoSuporte();
 
         console.log(
             "Gestok - Área de suporte carregada."
