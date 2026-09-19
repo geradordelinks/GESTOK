@@ -121,6 +121,9 @@ let unsubscribeChamados = null;
 let firestoreChamadosInicializado =
     false;
 
+let autenticacaoChamadosIniciada =
+    false;
+
 
 /* =========================================
    CONTA LOCAL
@@ -135,19 +138,16 @@ function obterContaGestokChamados() {
                 "gestok_conta"
             );
 
-
         if (!dados) {
 
             return null;
 
         }
 
-
         const conta =
             JSON.parse(
                 dados
             );
-
 
         if (
             !conta ||
@@ -157,7 +157,6 @@ function obterContaGestokChamados() {
             return null;
 
         }
-
 
         return conta;
 
@@ -171,6 +170,107 @@ function obterContaGestokChamados() {
         return null;
 
     }
+
+}
+
+
+/* =========================================
+   CONTEXTO CENTRAL DO GESTOK
+========================================= */
+
+function obterContextoGestokChamados() {
+
+    try {
+
+        if (
+            typeof obterContextoGestok ===
+            "function"
+        ) {
+
+            return (
+                obterContextoGestok() ||
+                null
+            );
+
+        }
+
+    } catch (erro) {
+
+        console.error(
+            "Erro ao obter contexto Gestok:",
+            erro
+        );
+
+    }
+
+    return null;
+
+}
+
+
+/* =========================================
+   OBTER LOJA PELO CONTEXTO
+========================================= */
+
+function obterLojaAtualChamados() {
+
+    try {
+
+        if (
+            typeof obterLojaAtualGestok ===
+            "function"
+        ) {
+
+            const lojaId =
+                obterLojaAtualGestok();
+
+            if (lojaId) {
+
+                return lojaId;
+
+            }
+
+        }
+
+    } catch (erro) {
+
+        console.error(
+            "Erro ao obter loja atual Gestok:",
+            erro
+        );
+
+    }
+
+
+    const contexto =
+        obterContextoGestokChamados();
+
+
+    if (
+        contexto &&
+        contexto.lojaId
+    ) {
+
+        return contexto.lojaId;
+
+    }
+
+
+    const conta =
+        obterContaGestokChamados();
+
+
+    if (
+        conta &&
+        conta.lojaId
+    ) {
+
+        return conta.lojaId;
+
+    }
+
+
+    return null;
 
 }
 
@@ -193,7 +293,6 @@ function obterUsuarioFirebaseChamados() {
 
         }
 
-
         return firebase
             .auth()
             .currentUser || null;
@@ -208,6 +307,197 @@ function obterUsuarioFirebaseChamados() {
         return null;
 
     }
+
+}
+
+
+/* =========================================
+   ESPERAR AUTENTICAÇÃO + CONTEXTO
+========================================= */
+
+function aguardarUsuarioEContextoChamados() {
+
+    return new Promise(
+        function (resolve, reject) {
+
+            let finalizado =
+                false;
+
+            let unsubscribeAuth =
+                null;
+
+            let tentativas =
+                0;
+
+            const maxTentativas =
+                50;
+
+
+            function finalizar(
+                sucesso,
+                valor
+            ) {
+
+                if (finalizado) {
+
+                    return;
+
+                }
+
+                finalizado =
+                    true;
+
+
+                if (
+                    typeof unsubscribeAuth ===
+                    "function"
+                ) {
+
+                    unsubscribeAuth();
+
+                }
+
+
+                clearInterval(
+                    intervalo
+                );
+
+
+                clearTimeout(
+                    timeout
+                );
+
+
+                if (sucesso) {
+
+                    resolve(
+                        valor
+                    );
+
+                } else {
+
+                    reject(
+                        valor
+                    );
+
+                }
+
+            }
+
+
+            async function verificar() {
+
+                if (finalizado) {
+
+                    return;
+
+                }
+
+
+                const usuario =
+                    obterUsuarioFirebaseChamados();
+
+
+                const lojaId =
+                    obterLojaAtualChamados();
+
+
+                if (
+                    usuario &&
+                    lojaId
+                ) {
+
+                    finalizar(
+                        true,
+                        {
+                            usuario,
+                            lojaId
+                        }
+                    );
+
+                    return;
+
+                }
+
+
+                tentativas++;
+
+
+                if (
+                    tentativas >=
+                    maxTentativas
+                ) {
+
+                    finalizar(
+                        false,
+                        new Error(
+                            "Não foi possível restaurar a autenticação e a loja do usuário."
+                        )
+                    );
+
+                }
+
+            }
+
+
+            const intervalo =
+                setInterval(
+                    verificar,
+                    200
+                );
+
+
+            const timeout =
+                setTimeout(
+                    function () {
+
+                        finalizar(
+                            false,
+                            new Error(
+                                "Tempo limite aguardando autenticação da conta."
+                            )
+                        );
+
+                    },
+                    12000
+                );
+
+
+            try {
+
+                if (
+                    typeof firebase !==
+                        "undefined" &&
+                    firebase.auth
+                ) {
+
+                    unsubscribeAuth =
+                        firebase
+                            .auth()
+                            .onAuthStateChanged(
+                                function () {
+
+                                    verificar();
+
+                                }
+                            );
+
+                }
+
+            } catch (erro) {
+
+                console.error(
+                    "Erro ao observar autenticação:",
+                    erro
+                );
+
+            }
+
+
+            verificar();
+
+        }
+    );
 
 }
 
@@ -251,7 +541,6 @@ function textoStatus(
         return "Aberto";
 
     }
-
 
     return status;
 
@@ -308,10 +597,6 @@ function converterDataFirestore(
     }
 
 
-    /*
-     * Timestamp do Firestore
-     */
-
     if (
         typeof valor.toDate ===
         "function"
@@ -321,10 +606,6 @@ function converterDataFirestore(
 
     }
 
-
-    /*
-     * Timestamp serializado
-     */
 
     if (
         typeof valor === "object" &&
@@ -338,10 +619,6 @@ function converterDataFirestore(
     }
 
 
-    /*
-     * Date
-     */
-
     if (
         valor instanceof Date
     ) {
@@ -350,10 +627,6 @@ function converterDataFirestore(
 
     }
 
-
-    /*
-     * String / número
-     */
 
     const data =
         new Date(
@@ -415,7 +688,6 @@ function formatarData(
 
             minute:
                 "2-digit"
-
         }
     );
 
@@ -668,10 +940,6 @@ function renderizarChamados() {
         "";
 
 
-    /*
-     * Mais recentes primeiro
-     */
-
     filtrados.sort(
         function (a, b) {
 
@@ -683,10 +951,6 @@ function renderizarChamados() {
         }
     );
 
-
-    /*
-     * Nenhum resultado
-     */
 
     if (
         filtrados.length === 0
@@ -712,10 +976,6 @@ function renderizarChamados() {
     }
 
 
-    /*
-     * Criar cards
-     */
-
     filtrados.forEach(
         function (chamado) {
 
@@ -728,11 +988,6 @@ function renderizarChamados() {
             item.className =
                 "ticket-item";
 
-
-            /*
-             * Guardamos o ID real
-             * do documento Firestore
-             */
 
             item.dataset.id =
                 chamado.id ||
@@ -964,14 +1219,6 @@ function abrirDetalhes(
     }
 
 
-    /*
-     * RESPOSTA DO SUPORTE
-     *
-     * Aceitamos alguns nomes de campo
-     * para deixar compatível com futuras
-     * versões do Admin.
-     */
-
     if (respostaSuporte) {
 
         const resposta =
@@ -1015,10 +1262,6 @@ function abrirDetalhes(
 
     }
 
-
-    /*
-     * ABRIR MODAL
-     */
 
     if (modalDetalhes) {
 
@@ -1176,125 +1419,165 @@ async function iniciarListenerChamados() {
             "Firebase Auth/Firestore não está disponível."
         );
 
-        if (emptyState) {
+        return;
 
-            emptyState.style.display =
-                "flex";
+    }
+
+
+    try {
+
+        /*
+         * ESPERAR AUTENTICAÇÃO E CONTEXTO
+         */
+
+        const resultado =
+            await aguardarUsuarioEContextoChamados();
+
+
+        if (
+            !resultado ||
+            !resultado.usuario ||
+            !resultado.lojaId
+        ) {
+
+            throw new Error(
+                "Usuário ou loja não encontrados."
+            );
 
         }
 
-        return;
 
-    }
+        const usuario =
+            resultado.usuario;
 
-
-    const usuario =
-        obterUsuarioFirebaseChamados();
-
-
-    const conta =
-        obterContaGestokChamados();
+        const lojaId =
+            resultado.lojaId;
 
 
-    if (
-        !usuario ||
-        !conta ||
-        !conta.lojaId
-    ) {
+        console.log(
+            "Meus chamados:",
+            {
+                uid:
+                    usuario.uid,
 
-        console.warn(
-            "Usuário ou loja não encontrados. Aguardando autenticação."
+                lojaId:
+                    lojaId
+            }
         );
 
-        return;
 
-    }
-
-
-    firestoreChamadosInicializado =
-        true;
+        firestoreChamadosInicializado =
+            true;
 
 
-    /*
-     * Caminho:
-     *
-     * lojas/{lojaId}/chamados
-     */
-
-    const referencia =
-        firebase
-            .firestore()
-            .collection(
-                "lojas"
-            )
-            .doc(
-                conta.lojaId
-            )
-            .collection(
-                "chamados"
-            )
-            .where(
-                "uid",
-                "==",
-                usuario.uid
-            );
+        /*
+         * Caminho:
+         *
+         * lojas/{lojaId}/chamados
+         */
 
 
-    /*
-     * Listener em tempo real
-     */
-
-    unsubscribeChamados =
-        referencia.onSnapshot(
-            function (snapshot) {
-
-                chamadosCache =
-                    snapshot.docs.map(
-                        function (doc) {
-
-                            return {
-
-                                id:
-                                    doc.id,
-
-                                ...doc.data()
-
-                            };
-
-                        }
-                    );
-
-
-                renderizarChamados();
-
-            },
-
-            function (erro) {
-
-                console.error(
-                    "Erro ao acompanhar chamados:",
-                    erro
+        const referencia =
+            firebase
+                .firestore()
+                .collection(
+                    "lojas"
+                )
+                .doc(
+                    lojaId
+                )
+                .collection(
+                    "chamados"
+                )
+                .where(
+                    "uid",
+                    "==",
+                    usuario.uid
                 );
 
 
-                chamadosCache =
-                    [];
+        /*
+         * Listener em tempo real
+         */
+
+        unsubscribeChamados =
+            referencia.onSnapshot(
+                function (snapshot) {
+
+                    chamadosCache =
+                        snapshot.docs.map(
+                            function (doc) {
+
+                                return {
+
+                                    id:
+                                        doc.id,
+
+                                    ...doc.data()
+
+                                };
+
+                            }
+                        );
 
 
-                renderizarChamados();
+                    renderizarChamados();
+
+                },
+
+                function (erro) {
+
+                    console.error(
+                        "Erro ao acompanhar chamados:",
+                        erro
+                    );
 
 
-                if (
-                    emptyState
-                ) {
+                    chamadosCache =
+                        [];
 
-                    emptyState.style.display =
-                        "flex";
+                    renderizarChamados();
+
+
+                    if (
+                        emptyState
+                    ) {
+
+                        emptyState.style.display =
+                            "flex";
+
+                    }
 
                 }
+            );
 
-            }
+
+    } catch (erro) {
+
+        console.error(
+            "Erro ao iniciar chamados:",
+            erro
         );
+
+
+        firestoreChamadosInicializado =
+            false;
+
+
+        if (
+            erro.message &&
+            erro.message.includes(
+                "Tempo limite"
+            )
+        ) {
+
+            console.warn(
+                "O Firebase demorou para restaurar a sessão."
+            );
+
+        }
+
+    }
 
 }
 
@@ -1331,14 +1614,31 @@ function pararListenerChamados() {
 function iniciarAutenticacaoChamados() {
 
     if (
-        typeof firebase ===
-            "undefined" ||
-        !firebase.auth
+        autenticacaoChamadosIniciada
     ) {
 
         return;
 
     }
+
+
+    if (
+        typeof firebase ===
+            "undefined" ||
+        !firebase.auth
+    ) {
+
+        console.error(
+            "Firebase Authentication não está disponível."
+        );
+
+        return;
+
+    }
+
+
+    autenticacaoChamadosIniciada =
+        true;
 
 
     firebase
@@ -1361,55 +1661,24 @@ function iniciarAutenticacaoChamados() {
 
 
                 /*
-                 * Espera o contexto local
-                 * estar disponível.
+                 * Aguarda automaticamente
+                 * usuário + contexto + loja.
                  */
 
-                let tentativas =
-                    0;
+                try {
 
+                    await aguardarUsuarioEContextoChamados();
 
-                const maxTentativas =
-                    30;
+                    await iniciarListenerChamados();
 
+                } catch (erro) {
 
-                while (
-                    tentativas <
-                    maxTentativas
-                ) {
-
-                    const conta =
-                        obterContaGestokChamados();
-
-
-                    if (
-                        conta &&
-                        conta.lojaId
-                    ) {
-
-                        break;
-
-                    }
-
-
-                    await new Promise(
-                        function (resolve) {
-
-                            setTimeout(
-                                resolve,
-                                200
-                            );
-
-                        }
+                    console.warn(
+                        "Aguardando contexto do Gestok:",
+                        erro
                     );
 
-
-                    tentativas++;
-
                 }
-
-
-                iniciarListenerChamados();
 
             }
         );
@@ -1439,17 +1708,10 @@ document.addEventListener(
     "DOMContentLoaded",
     function () {
 
-        /*
-         * Deixa a tela inicialmente vazia
-         * enquanto o Firebase restaura
-         * a sessão.
-         */
-
         chamadosCache =
             [];
 
         renderizarChamados();
-
 
         iniciarAutenticacaoChamados();
 
@@ -1458,14 +1720,22 @@ document.addEventListener(
 
 
 /* =========================================
-   VOLTAR PARA A PÁGINA
+   PÁGINA VOLTOU AO FOCO
 ========================================= */
 
 window.addEventListener(
     "pageshow",
     function () {
 
-        iniciarListenerChamados();
+        if (
+            firebase &&
+            firebase.auth &&
+            firebase.auth().currentUser
+        ) {
+
+            iniciarListenerChamados();
+
+        }
 
     }
 );
