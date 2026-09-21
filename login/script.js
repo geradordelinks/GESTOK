@@ -2,6 +2,7 @@
    GESTOK
    LOGIN
    CÓDIGO DA LOJA + USUÁRIO + SENHA
+   + RECUPERAÇÃO DE SENHA
 ========================================= */
 
 document.addEventListener(
@@ -10,11 +11,13 @@ document.addEventListener(
 
 
         /* =====================================
-           ELEMENTOS
+           ELEMENTOS LOGIN
         ===================================== */
 
         const form =
-            document.querySelector("form");
+            document.getElementById(
+                "loginForm"
+            );
 
 
         const mensagem =
@@ -41,6 +44,74 @@ document.addEventListener(
             );
 
 
+        const botaoEntrar =
+            document.getElementById(
+                "btnEntrar"
+            );
+
+
+        /* =====================================
+           ELEMENTOS RECUPERAÇÃO
+        ===================================== */
+
+        const abrirRecuperacao =
+            document.getElementById(
+                "abrirRecuperacao"
+            );
+
+
+        const passwordModalOverlay =
+            document.getElementById(
+                "passwordModalOverlay"
+            );
+
+
+        const fecharRecuperacao =
+            document.getElementById(
+                "fecharRecuperacao"
+            );
+
+
+        const cancelarRecuperacao =
+            document.getElementById(
+                "cancelarRecuperacao"
+            );
+
+
+        const recuperacaoForm =
+            document.getElementById(
+                "recuperacaoForm"
+            );
+
+
+        const codigoLojaRecuperacao =
+            document.getElementById(
+                "codigoLojaRecuperacao"
+            );
+
+
+        const usuarioRecuperacao =
+            document.getElementById(
+                "usuarioRecuperacao"
+            );
+
+
+        const passwordStatus =
+            document.getElementById(
+                "passwordStatus"
+            );
+
+
+        const enviarRecuperacao =
+            document.getElementById(
+                "enviarRecuperacao"
+            );
+
+
+        /* =====================================
+           VERIFICAR FORM
+        ===================================== */
+
         if (!form) {
 
             return;
@@ -52,16 +123,577 @@ document.addEventListener(
            FORMATAR CÓDIGO DA LOJA
         ===================================== */
 
-        if (codigoLojaInput) {
+        function formatarCodigo(
+            campo
+        ) {
 
-            codigoLojaInput.addEventListener(
+            if (!campo) {
+                return;
+            }
+
+
+            campo.addEventListener(
                 "input",
                 function () {
 
                     this.value =
                         this.value
-                            .replace(/\D/g, "")
-                            .slice(0, 4);
+                            .replace(
+                                /\D/g,
+                                ""
+                            )
+                            .slice(
+                                0,
+                                4
+                            );
+
+                }
+            );
+
+        }
+
+
+        formatarCodigo(
+            codigoLojaInput
+        );
+
+
+        formatarCodigo(
+            codigoLojaRecuperacao
+        );
+
+
+        /* =====================================
+           ABRIR RECUPERAÇÃO
+        ===================================== */
+
+        function abrirModalRecuperacao() {
+
+            if (
+                !passwordModalOverlay
+            ) {
+
+                return;
+
+            }
+
+
+            if (
+                codigoLojaInput &&
+                codigoLojaRecuperacao
+            ) {
+
+                codigoLojaRecuperacao.value =
+                    codigoLojaInput.value;
+
+            }
+
+
+            if (
+                usuarioInput &&
+                usuarioRecuperacao
+            ) {
+
+                usuarioRecuperacao.value =
+                    usuarioInput.value;
+
+            }
+
+
+            esconderStatusRecuperacao();
+
+
+            passwordModalOverlay.classList.add(
+                "active"
+            );
+
+
+            document.body.style.overflow =
+                "hidden";
+
+
+            setTimeout(
+                function () {
+
+                    if (
+                        codigoLojaRecuperacao.value
+                    ) {
+
+                        usuarioRecuperacao?.focus();
+
+                    } else {
+
+                        codigoLojaRecuperacao?.focus();
+
+                    }
+
+                },
+                100
+            );
+
+        }
+
+
+        /* =====================================
+           FECHAR RECUPERAÇÃO
+        ===================================== */
+
+        function fecharModalRecuperacao() {
+
+            if (
+                passwordModalOverlay
+            ) {
+
+                passwordModalOverlay.classList.remove(
+                    "active"
+                );
+
+            }
+
+
+            document.body.style.overflow =
+                "";
+
+        }
+
+
+        if (abrirRecuperacao) {
+
+            abrirRecuperacao.addEventListener(
+                "click",
+                function (event) {
+
+                    event.preventDefault();
+
+                    abrirModalRecuperacao();
+
+                }
+            );
+
+        }
+
+
+        if (fecharRecuperacao) {
+
+            fecharRecuperacao.addEventListener(
+                "click",
+                fecharModalRecuperacao
+            );
+
+        }
+
+
+        if (cancelarRecuperacao) {
+
+            cancelarRecuperacao.addEventListener(
+                "click",
+                fecharModalRecuperacao
+            );
+
+        }
+
+
+        if (passwordModalOverlay) {
+
+            passwordModalOverlay.addEventListener(
+                "click",
+                function (event) {
+
+                    if (
+                        event.target ===
+                        passwordModalOverlay
+                    ) {
+
+                        fecharModalRecuperacao();
+
+                    }
+
+                }
+            );
+
+        }
+
+
+        /* =====================================
+           ESC
+        ===================================== */
+
+        document.addEventListener(
+            "keydown",
+            function (event) {
+
+                if (
+                    event.key ===
+                    "Escape"
+                ) {
+
+                    fecharModalRecuperacao();
+
+                }
+
+            }
+        );
+
+
+        /* =====================================
+           STATUS RECUPERAÇÃO
+        ===================================== */
+
+        function mostrarStatusRecuperacao(
+            texto,
+            tipo
+        ) {
+
+            if (
+                !passwordStatus
+            ) {
+
+                return;
+
+            }
+
+
+            passwordStatus.textContent =
+                texto;
+
+
+            passwordStatus.className =
+                "password-status show " +
+                (
+                    tipo === "success"
+                        ? "success"
+                        : "error"
+                );
+
+        }
+
+
+        function esconderStatusRecuperacao() {
+
+            if (
+                !passwordStatus
+            ) {
+
+                return;
+
+            }
+
+
+            passwordStatus.textContent =
+                "";
+
+
+            passwordStatus.className =
+                "password-status";
+
+        }
+
+
+        /* =====================================
+           RECUPERAR SENHA
+        ===================================== */
+
+        async function recuperarSenhaGestok(
+            codigoLoja,
+            usuario
+        ) {
+
+            const db =
+                firebase.firestore();
+
+
+            const acessoRef =
+                db
+                    .collection(
+                        "acessos"
+                    )
+                    .doc(
+                        `${codigoLoja}_${usuario}`
+                    );
+
+
+            const acessoSnap =
+                await acessoRef.get();
+
+
+            if (
+                !acessoSnap.exists
+            ) {
+
+                throw new Error(
+                    "Código da Loja ou usuário não encontrado."
+                );
+
+            }
+
+
+            const acesso =
+                acessoSnap.data() ||
+                {};
+
+
+            const emailAuth =
+                String(
+                    acesso.emailAuth ||
+                    ""
+                )
+                    .trim()
+                    .toLowerCase();
+
+
+            if (!emailAuth) {
+
+                throw new Error(
+                    "Esta conta não possui um e-mail de recuperação cadastrado."
+                );
+
+            }
+
+
+            await firebase
+                .auth()
+                .sendPasswordResetEmail(
+                    emailAuth
+                );
+
+
+            return true;
+
+        }
+
+
+        /* =====================================
+           FORMULÁRIO RECUPERAÇÃO
+        ===================================== */
+
+        if (
+            recuperacaoForm
+        ) {
+
+            recuperacaoForm.addEventListener(
+                "submit",
+                async function (event) {
+
+                    event.preventDefault();
+
+
+                    const codigoLoja =
+                        codigoLojaRecuperacao
+                            ?.value
+                            .trim() || "";
+
+
+                    const usuario =
+                        usuarioRecuperacao
+                            ?.value
+                            .trim()
+                            .toLowerCase() || "";
+
+
+                    /* =========================
+                       VALIDAR CÓDIGO
+                    ========================= */
+
+                    if (
+                        codigoLoja.length !==
+                        4
+                    ) {
+
+                        mostrarStatusRecuperacao(
+                            "O Código da Loja deve ter 4 dígitos.",
+                            "error"
+                        );
+
+                        return;
+
+                    }
+
+
+                    /* =========================
+                       VALIDAR USUÁRIO
+                    ========================= */
+
+                    if (!usuario) {
+
+                        mostrarStatusRecuperacao(
+                            "Digite seu usuário.",
+                            "error"
+                        );
+
+                        return;
+
+                    }
+
+
+                    /* =========================
+                       BOTÃO
+                    ========================= */
+
+                    if (
+                        enviarRecuperacao
+                    ) {
+
+                        enviarRecuperacao.disabled =
+                            true;
+
+                        enviarRecuperacao.textContent =
+                            "Enviando...";
+
+                    }
+
+
+                    esconderStatusRecuperacao();
+
+
+                    try {
+
+                        await recuperarSenhaGestok(
+                            codigoLoja,
+                            usuario
+                        );
+
+
+                        mostrarStatusRecuperacao(
+
+                            "O link de recuperação foi enviado para o e-mail cadastrado nesta conta.",
+
+                            "success"
+
+                        );
+
+
+                        if (
+                            codigoLojaInput
+                        ) {
+
+                            codigoLojaInput.value =
+                                codigoLoja;
+
+                        }
+
+
+                        if (
+                            usuarioInput
+                        ) {
+
+                            usuarioInput.value =
+                                usuario;
+
+                        }
+
+
+                        setTimeout(
+                            function () {
+
+                                fecharModalRecuperacao();
+
+                            },
+                            3500
+                        );
+
+
+                    } catch (erro) {
+
+                        console.error(
+                            "Erro na recuperação de senha:",
+                            erro
+                        );
+
+
+                        let texto =
+                            "Não foi possível enviar o link de recuperação.";
+
+
+                        if (
+                            erro.code ===
+                            "auth/invalid-email"
+                        ) {
+
+                            texto =
+                                "O e-mail da conta é inválido.";
+
+                        }
+
+
+                        if (
+                            erro.code ===
+                            "auth/user-not-found"
+                        ) {
+
+                            texto =
+                                "Não foi possível localizar a conta.";
+
+                        }
+
+
+                        if (
+                            erro.code ===
+                            "auth/too-many-requests"
+                        ) {
+
+                            texto =
+                                "Muitas tentativas. Aguarde alguns minutos e tente novamente.";
+
+                        }
+
+
+                        if (
+                            erro.code ===
+                            "auth/network-request-failed"
+                        ) {
+
+                            texto =
+                                "Falha de conexão. Verifique sua internet e tente novamente.";
+
+                        }
+
+
+                        if (
+                            erro.message
+                            .includes(
+                                "não encontrado"
+                            )
+                        ) {
+
+                            texto =
+                                erro.message;
+
+                        }
+
+
+                        if (
+                            erro.message
+                            .includes(
+                                "não possui um e-mail"
+                            )
+                        ) {
+
+                            texto =
+                                erro.message;
+
+                        }
+
+
+                        mostrarStatusRecuperacao(
+                            texto,
+                            "error"
+                        );
+
+                    } finally {
+
+                        if (
+                            enviarRecuperacao
+                        ) {
+
+                            enviarRecuperacao.disabled =
+                                false;
+
+                            enviarRecuperacao.textContent =
+                                "Enviar link";
+
+                        }
+
+                    }
 
                 }
             );
@@ -95,7 +727,8 @@ document.addEventListener(
 
 
                 const senha =
-                    senhaInput?.value || "";
+                    senhaInput?.value ||
+                    "";
 
 
                 /* =================================
@@ -117,7 +750,8 @@ document.addEventListener(
 
 
                 if (
-                    codigoLoja.length !== 4
+                    codigoLoja.length !==
+                    4
                 ) {
 
                     mostrarMensagem(
@@ -170,18 +804,12 @@ document.addEventListener(
                    DESABILITAR BOTÃO
                 ================================= */
 
-                const botao =
-                    form.querySelector(
-                        "button[type='submit']"
-                    );
+                if (botaoEntrar) {
 
-
-                if (botao) {
-
-                    botao.disabled =
+                    botaoEntrar.disabled =
                         true;
 
-                    botao.textContent =
+                    botaoEntrar.textContent =
                         "Entrando...";
 
                 }
@@ -191,57 +819,129 @@ document.addEventListener(
                    REALIZAR LOGIN
                 ================================= */
 
-                const resultado =
-                    await entrarGestok(
+                try {
 
-                        codigoLoja,
+                    const resultado =
+                        await entrarGestok(
 
-                        usuario,
+                            codigoLoja,
 
-                        senha
+                            usuario,
 
-                    );
-/* =================================
-                   LOGIN INVÁLIDO
-                ================================= */
+                            senha
 
-                if (!resultado.ok) {
-
-                    mostrarMensagem(
-                        resultado.mensagem,
-                        true
-                    );
+                        );
 
 
-                    if (botao) {
+                    /* =============================
+                       LOGIN INVÁLIDO
+                    ============================== */
 
-                        botao.disabled =
-                            false;
+                    if (
+                        !resultado.ok
+                    ) {
 
-                        botao.textContent =
-                            "Entrar no Gestok →";
+                        mostrarMensagem(
+                            resultado.mensagem,
+                            true
+                        );
+
+
+                        if (
+                            botaoEntrar
+                        ) {
+
+                            botaoEntrar.disabled =
+                                false;
+
+                            botaoEntrar.textContent =
+                                "Entrar no Gestok →";
+
+                        }
+
+
+                        return;
 
                     }
 
 
-                    return;
+                    /* =============================
+                       PAGAMENTO PENDENTE
+                    ============================== */
 
-                }
+                    if (
+                        !pagamentoAprovadoGestok(
+                            resultado.conta
+                        )
+                    ) {
+
+                        mostrarMensagem(
+
+                            "Login realizado. Finalize o pagamento para liberar o sistema.",
+
+                            false
+
+                        );
 
 
-                /* =================================
-                   PAGAMENTO PENDENTE
-                ================================= */
+                        setTimeout(
+                            function () {
 
-                if (
-                    !pagamentoAprovadoGestok(
-                        resultado.conta
-                    )
-                ) {
+                                window.location.href =
+                                    "../pagamento/index.html";
+
+                            },
+                            700
+                        );
+
+
+                        return;
+
+                    }
+
+
+                    /* =============================
+                       ASSINATURA EXPIRADA
+                    ============================== */
+
+                    if (
+                        !assinaturaAtivaGestok(
+                            resultado.conta
+                        )
+                    ) {
+
+                        mostrarMensagem(
+
+                            "Sua assinatura expirou. Renove para continuar.",
+
+                            true
+
+                        );
+
+
+                        setTimeout(
+                            function () {
+
+                                window.location.href =
+                                    "../pagamento/index.html";
+
+                            },
+                            1000
+                        );
+
+
+                        return;
+
+                    }
+
+
+                    /* =============================
+                       LOGIN CONCLUÍDO
+                    ============================== */
 
                     mostrarMensagem(
 
-                        "Login realizado. Finalize o pagamento para liberar o sistema.",
+                        "Login realizado! Abrindo o sistema...",
 
                         false
 
@@ -252,82 +952,46 @@ document.addEventListener(
                         function () {
 
                             window.location.href =
-                                "../pagamento/index.html";
+                                "../sistema/index.html";
 
                         },
-                        700
+                        600
                     );
 
+                } catch (erro) {
 
-                    return;
+                    console.error(
+                        "Erro ao realizar login:",
+                        erro
+                    );
 
-                }
-
-
-                /* =================================
-                   ASSINATURA EXPIRADA
-                ================================= */
-
-                if (
-                    !assinaturaAtivaGestok(
-                        resultado.conta
-                    )
-                ) {
 
                     mostrarMensagem(
-
-                        "Sua assinatura expirou. Renove para continuar.",
-
+                        "Não foi possível realizar o login.",
                         true
-
                     );
 
 
-                    setTimeout(
-                        function () {
+                    if (
+                        botaoEntrar
+                    ) {
 
-                            window.location.href =
-                                "../pagamento/index.html";
+                        botaoEntrar.disabled =
+                            false;
 
-                        },
-                        1000
-                    );
+                        botaoEntrar.textContent =
+                            "Entrar no Gestok →";
 
-
-                    return;
+                    }
 
                 }
-
-
-                /* =================================
-                   LOGIN CONCLUÍDO
-                ================================= */
-
-                mostrarMensagem(
-
-                    "Login realizado! Abrindo o sistema...",
-
-                    false
-
-                );
-
-
-                setTimeout(
-                    function () {
-
-                        window.location.href =
-                            "../sistema/index.html";
-
-                    },
-                    600
-                );
 
             }
         );
 
 
         /* =====================================
-           MENSAGEM
+           MENSAGEM LOGIN
         ===================================== */
 
         function mostrarMensagem(
@@ -337,7 +1001,9 @@ document.addEventListener(
 
             if (!mensagem) {
 
-                alert(texto);
+                alert(
+                    texto
+                );
 
                 return;
 
