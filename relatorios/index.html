@@ -16,28 +16,32 @@
         rel="stylesheet"
         href="style.css"
     >
+
     <link
         rel="stylesheet"
         href="../componentes/sidebar.css"
     >
+
 </head>
 
 
 <body>
+
     <div id="gestok-sidebar-container"></div>
+
+
     <!-- =========================================
          CABEÇALHO
     ========================================== -->
 
     <header class="header">
 
-
         <div class="header-left">
-
 
             <button
                 class="menu-button"
                 id="menuButton"
+                type="button"
                 aria-label="Abrir menu"
             >
 
@@ -47,14 +51,11 @@
 
             </button>
 
-
             <div class="page-name">
                 Relatórios
             </div>
 
-
         </div>
-
 
     </header>
 
@@ -66,10 +67,11 @@
     <main class="page">
 
 
-        <!-- CABEÇALHO -->
+        <!-- =====================================
+             CABEÇALHO
+        ====================================== -->
 
         <div class="page-header">
-
 
             <div>
 
@@ -77,11 +79,9 @@
                     GESTÃO
                 </span>
 
-
                 <h1>
                     Relatórios
                 </h1>
-
 
                 <p>
                     Consulte e gere relatórios
@@ -89,7 +89,6 @@
                 </p>
 
             </div>
-
 
         </div>
 
@@ -294,7 +293,9 @@
         >
 
 
-            <div class="form-header preview-header">
+            <div
+                class="form-header preview-header"
+            >
 
 
                 <div>
@@ -366,19 +367,91 @@
         src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
     ></script>
 
-
     <script
         src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"
     ></script>
 
-    <script src="../componentes/sidebar.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+
+    <!-- =========================================
+         FIREBASE
+    ========================================== -->
+
+    <script
+        src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"
+    ></script>
+
+    <script
+        src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"
+    ></script>
+
+    <script
+        src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"
+    ></script>
+
+
+    <!-- =========================================
+         CONFIGURAÇÃO FIREBASE
+    ========================================== -->
+
     <script src="../firebase/config.js"></script>
-    <script>firebase.initializeApp(firebaseConfig);</script>
+
+
+    <!-- =========================================
+         INICIALIZAÇÃO SEGURA DO FIREBASE
+    ========================================== -->
+
+    <script>
+
+        if (
+            typeof firebase !== "undefined" &&
+            typeof firebaseConfig !== "undefined"
+        ) {
+
+            if (!firebase.apps.length) {
+
+                firebase.initializeApp(
+                    firebaseConfig
+                );
+
+            }
+
+        }
+
+    </script>
+
+
+    <!-- =========================================
+         FIREBASE AUTH
+    ========================================== -->
+
+    <script src="../firebase/auth.js"></script>
+
+
+    <!-- =========================================
+         FIREBASE FIRESTORE
+    ========================================== -->
+
+    <script src="../firebase/firestore.js"></script>
+
+
+    <!-- =========================================
+         AUTH CENTRAL DO GESTOK
+    ========================================== -->
 
     <script src="../auth.js"></script>
+
+
+    <!-- =========================================
+         SIDEBAR UNIVERSAL
+    ========================================== -->
+
+    <script src="../componentes/sidebar.js"></script>
+
+
+    <!-- =========================================
+         SCRIPT DOS RELATÓRIOS
+    ========================================== -->
+
     <script src="script.js"></script>
 
 
