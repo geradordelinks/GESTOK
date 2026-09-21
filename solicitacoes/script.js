@@ -1,6 +1,7 @@
 /* =========================================
    GESTOK
    SOLICITAÇÕES DE COMPRA
+   FIRESTORE
 ========================================= */
 
 if (!exigirLoginGestok()) {
@@ -107,14 +108,18 @@ const limparFiltros =
 
 
 /* =========================================
-   CHAVES
+   FIRESTORE
 ========================================= */
 
-const CHAVE_PRODUTOS =
-    "gestok_produtos";
+let produtosCache = [];
 
-const CHAVE_SOLICITACOES =
-    "gestok_solicitacoes";
+let solicitacoesCache = [];
+
+let lojaIdAtual = null;
+
+let cancelarListenerProdutos = null;
+
+let cancelarListenerSolicitacoes = null;
 
 
 /* =========================================
@@ -131,7 +136,8 @@ function abrirMenu() {
         overlay.classList.add("active");
     }
 
-    document.body.style.overflow = "hidden";
+    document.body.style.overflow =
+        "hidden";
 }
 
 
@@ -145,7 +151,8 @@ function fecharMenu() {
         overlay.classList.remove("active");
     }
 
-    document.body.style.overflow = "";
+    document.body.style.overflow =
+        "";
 }
 
 
@@ -205,34 +212,9 @@ document.addEventListener(
 
 function obterProdutos() {
 
-    const dados =
-        localStorage.getItem(
-            CHAVE_PRODUTOS
-        );
-
-    if (!dados) {
-        return [];
-    }
-
-    try {
-
-        const produtos =
-            JSON.parse(dados);
-
-        return Array.isArray(produtos)
-            ? produtos
-            : [];
-
-    } catch (erro) {
-
-        console.error(
-            "Erro ao carregar produtos:",
-            erro
-        );
-
-        return [];
-
-    }
+    return Array.isArray(produtosCache)
+        ? produtosCache
+        : [];
 
 }
 
@@ -243,45 +225,116 @@ function obterProdutos() {
 
 function obterSolicitacoes() {
 
-    const dados =
-        localStorage.getItem(
-            CHAVE_SOLICITACOES
-        );
+    return Array.isArray(
+        solicitacoesCache
+    )
+        ? solicitacoesCache
+        : [];
 
-    if (!dados) {
-        return [];
+}
+
+
+/* =========================================
+   DATA FIRESTORE
+========================================= */
+
+function normalizarData(
+    valor
+) {
+
+    if (!valor) {
+        return null;
     }
+
 
     try {
 
-        const solicitacoes =
-            JSON.parse(dados);
+        if (
+            typeof valor.toDate ===
+            "function"
+        ) {
 
-        return Array.isArray(solicitacoes)
-            ? solicitacoes
-            : [];
+            const data =
+                valor.toDate();
+
+            return data instanceof Date &&
+                !Number.isNaN(
+                    data.getTime()
+                )
+                ? data
+                : null;
+
+        }
+
+
+        if (
+            typeof valor === "object" &&
+            typeof valor.seconds ===
+                "number"
+        ) {
+
+            const data =
+                new Date(
+                    valor.seconds * 1000
+                );
+
+            return Number.isNaN(
+                data.getTime()
+            )
+                ? null
+                : data;
+
+        }
+
+
+        const data =
+            valor instanceof Date
+                ? valor
+                : new Date(valor);
+
+
+        if (
+            Number.isNaN(
+                data.getTime()
+            )
+        ) {
+
+            return null;
+
+        }
+
+
+        return data;
 
     } catch (erro) {
 
         console.error(
-            "Erro ao carregar solicitações:",
+            "Erro ao normalizar data:",
             erro
         );
 
-        return [];
+        return null;
 
     }
 
 }
 
 
-function salvarSolicitacoes(
-    solicitacoes
+function formatarData(
+    valor
 ) {
 
-    localStorage.setItem(
-        CHAVE_SOLICITACOES,
-        JSON.stringify(solicitacoes)
+    const data =
+        normalizarData(valor);
+
+
+    if (!data) {
+        return "-";
+    }
+
+
+    return data.toLocaleDateString(
+        "pt-BR"
     );
 
 }
@@ -297,8 +350,10 @@ function carregarProdutos() {
         return;
     }
 
+
     const produtos =
         obterProdutos();
+
 
     produtoSelect.innerHTML = `
         <option value="">
@@ -306,12 +361,28 @@ function carregarProdutos() {
         </option>
     `;
 
+
     const produtosAtivos =
-        produtos.filter(function (produto) {
+        produtos
+            .filter(function (produto) {
 
-            return produto.ativo !== false;
+                return (
+                    produto.ativo !== false
+                );
 
-        });
+            })
+            .sort(function (a, b) {
+
+                return String(
+                    a.nome || ""
+                ).localeCompare(
+                    String(
+                        b.nome || ""
+                    ),
+                    "pt-BR"
+                );
+
+            });
 
 
     produtosAtivos.forEach(
@@ -322,13 +393,19 @@ function carregarProdutos() {
                     "option"
                 );
 
+
             option.value =
                 produto.id;
+
 
             option.textContent =
                 produto.codigo
                     ? `${produto.nome} — ${produto.codigo}`
-                    : produto.nome;
+                    : (
+                        produto.nome ||
+                        "Produto sem nome"
+                    );
+
 
             produtoSelect.appendChild(
                 option
@@ -349,12 +426,17 @@ function atualizarInformacoesProduto() {
     const produtos =
         obterProdutos();
 
+
     const produto =
         produtos.find(
             function (item) {
 
-                return String(item.id) ===
-                    String(produtoSelect.value);
+                return (
+                    String(item.id) ===
+                    String(
+                        produtoSelect.value
+                    )
+                );
 
             }
         );
@@ -362,8 +444,12 @@ function atualizarInformacoesProduto() {
 
     if (!produto) {
 
-        stockInfo.style.display =
-            "none";
+        if (stockInfo) {
+
+            stockInfo.style.display =
+                "none";
+
+        }
 
         return;
 
@@ -375,33 +461,54 @@ function atualizarInformacoesProduto() {
             produto.quantidade || 0
         );
 
+
     const minimo =
         Number(
             produto.estoqueMinimo || 0
         );
 
+
     const unidade =
         produto.unidade || "UN";
 
 
-    estoqueAtual.textContent =
-        `${quantidade} ${unidade}`;
+    if (estoqueAtual) {
 
-    estoqueMinimo.textContent =
-        `${minimo} ${unidade}`;
+        estoqueAtual.textContent =
+            `${quantidade} ${unidade}`;
 
-    unidadeProduto.textContent =
-        unidade;
+    }
 
 
-    stockInfo.style.display =
-        "grid";
+    if (estoqueMinimo) {
+
+        estoqueMinimo.textContent =
+            `${minimo} ${unidade}`;
+
+    }
+
+
+    if (unidadeProduto) {
+
+        unidadeProduto.textContent =
+            unidade;
+
+    }
+
+
+    if (stockInfo) {
+
+        stockInfo.style.display =
+            "grid";
+
+    }
 
 
     const motivo =
         document.getElementById(
             "motivo"
         );
+
 
     if (
         motivo &&
@@ -425,14 +532,21 @@ function abrirModalSolicitacao() {
 
     carregarProdutos();
 
+
     if (solicitacaoForm) {
+
         solicitacaoForm.reset();
+
     }
 
+
     if (stockInfo) {
+
         stockInfo.style.display =
             "none";
+
     }
+
 
     if (modalOverlay) {
 
@@ -441,6 +555,7 @@ function abrirModalSolicitacao() {
         );
 
     }
+
 
     document.body.style.overflow =
         "hidden";
@@ -457,6 +572,7 @@ function fecharModalSolicitacao() {
         );
 
     }
+
 
     document.body.style.overflow =
         "";
@@ -530,54 +646,77 @@ if (produtoSelect) {
 
 
 /* =========================================
-   DATA
+   STATUS
 ========================================= */
 
-function formatarData(data) {
+function classeStatus(
+    status
+) {
 
-    const valor =
-        new Date(data);
+    if (status === "Pendente") {
 
-    if (
-        Number.isNaN(
-            valor.getTime()
-        )
-    ) {
-
-        return "-";
+        return "status-pendente";
 
     }
 
-    return valor.toLocaleDateString(
-        "pt-BR"
-    );
+
+    if (status === "Em análise") {
+
+        return "status-analise";
+
+    }
+
+
+    if (status === "Aprovada") {
+
+        return "status-aprovada";
+
+    }
+
+
+    if (status === "Recusada") {
+
+        return "status-recusada";
+
+    }
+
+
+    return "status-cancelada";
 
 }
 
 
 /* =========================================
-   STATUS
+   ESCAPAR HTML
 ========================================= */
 
-function classeStatus(status) {
+function escaparHtml(
+    texto
+) {
 
-    if (status === "Pendente") {
-        return "status-pendente";
-    }
-
-    if (status === "Em análise") {
-        return "status-analise";
-    }
-
-    if (status === "Aprovada") {
-        return "status-aprovada";
-    }
-
-    if (status === "Recusada") {
-        return "status-recusada";
-    }
-
-    return "status-cancelada";
+    return String(
+        texto ?? ""
+    )
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+        .replace(
+            /</g,
+            "&lt;"
+        )
+        .replace(
+            />/g,
+            "&gt;"
+        )
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+        .replace(
+            /'/g,
+            "&#039;"
+        );
 
 }
 
@@ -591,6 +730,7 @@ function atualizarResumo() {
     const solicitacoes =
         obterSolicitacoes();
 
+
     const produtos =
         obterProdutos();
 
@@ -599,8 +739,10 @@ function atualizarResumo() {
         solicitacoes.filter(
             function (item) {
 
-                return item.status ===
-                    "Pendente";
+                return (
+                    item.status ===
+                    "Pendente"
+                );
 
             }
         ).length;
@@ -610,8 +752,10 @@ function atualizarResumo() {
         solicitacoes.filter(
             function (item) {
 
-                return item.status ===
-                    "Aprovada";
+                return (
+                    item.status ===
+                    "Aprovada"
+                );
 
             }
         ).length;
@@ -623,13 +767,17 @@ function atualizarResumo() {
 
                 const quantidade =
                     Number(
-                        produto.quantidade || 0
+                        produto.quantidade ||
+                        0
                     );
+
 
                 const minimo =
                     Number(
-                        produto.estoqueMinimo || 0
+                        produto.estoqueMinimo ||
+                        0
                     );
+
 
                 return (
                     produto.ativo !== false &&
@@ -641,28 +789,60 @@ function atualizarResumo() {
         ).length;
 
 
-    document.getElementById(
-        "totalPendentes"
-    ).textContent =
-        pendentes;
+    const elementoPendentes =
+        document.getElementById(
+            "totalPendentes"
+        );
 
 
-    document.getElementById(
-        "totalAprovadas"
-    ).textContent =
-        aprovadas;
+    const elementoAprovadas =
+        document.getElementById(
+            "totalAprovadas"
+        );
 
 
-    document.getElementById(
-        "totalAbaixoMinimo"
-    ).textContent =
-        abaixoMinimo;
+    const elementoAbaixoMinimo =
+        document.getElementById(
+            "totalAbaixoMinimo"
+        );
 
 
-    document.getElementById(
-        "totalSolicitacoes"
-    ).textContent =
-        solicitacoes.length;
+    const elementoTotal =
+        document.getElementById(
+            "totalSolicitacoes"
+        );
+
+
+    if (elementoPendentes) {
+
+        elementoPendentes.textContent =
+            pendentes;
+
+    }
+
+
+    if (elementoAprovadas) {
+
+        elementoAprovadas.textContent =
+            aprovadas;
+
+    }
+
+
+    if (elementoAbaixoMinimo) {
+
+        elementoAbaixoMinimo.textContent =
+            abaixoMinimo;
+
+    }
+
+
+    if (elementoTotal) {
+
+        elementoTotal.textContent =
+            solicitacoes.length;
+
+    }
 
 }
 
@@ -676,13 +856,19 @@ function obterSolicitacoesFiltradas() {
     const solicitacoes =
         obterSolicitacoes();
 
+
     const termo =
-        (busca.value || "")
+        (
+            busca?.value ||
+            ""
+        )
             .trim()
             .toLowerCase();
 
+
     const status =
-        filtroStatus.value;
+        filtroStatus?.value ||
+        "";
 
 
     return solicitacoes.filter(
@@ -695,19 +881,22 @@ function obterSolicitacoesFiltradas() {
                     item.motivo,
                     item.observacao
                 ]
-                .filter(Boolean)
-                .join(" ")
-                .toLowerCase();
+                    .filter(Boolean)
+                    .join(" ")
+                    .toLowerCase();
 
 
             const correspondeBusca =
                 !termo ||
-                texto.includes(termo);
+                texto.includes(
+                    termo
+                );
 
 
             const correspondeStatus =
                 !status ||
-                item.status === status;
+                item.status ===
+                    status;
 
 
             return (
@@ -731,46 +920,76 @@ function renderizarSolicitacoes() {
         return;
     }
 
+
     const solicitacoes =
-        obterSolicitacoesFiltradas();
+        obterSolicitacoesFiltradas()
+            .sort(
+                function (a, b) {
+
+                    return (
+                        normalizarData(
+                            b.data
+                        )?.getTime() || 0
+                    ) -
+                    (
+                        normalizarData(
+                            a.data
+                        )?.getTime() || 0
+                    );
+
+                }
+            );
 
 
     listaSolicitacoes.innerHTML =
         "";
 
 
-    if (solicitacoes.length === 0) {
-
-        emptyState.style.display =
-            "flex";
-
+    const tableWrap =
         document.querySelector(
             ".table-wrap"
-        ).style.display =
-            "none";
+        );
+
+
+    if (
+        solicitacoes.length === 0
+    ) {
+
+        if (emptyState) {
+
+            emptyState.style.display =
+                "flex";
+
+        }
+
+
+        if (tableWrap) {
+
+            tableWrap.style.display =
+                "none";
+
+        }
+
 
         return;
 
     }
 
 
-    emptyState.style.display =
-        "none";
+    if (emptyState) {
 
-    document.querySelector(
-        ".table-wrap"
-    ).style.display =
-        "block";
+        emptyState.style.display =
+            "none";
+
+    }
 
 
-    solicitacoes.sort(
-        function (a, b) {
+    if (tableWrap) {
 
-            return new Date(b.data) -
-                new Date(a.data);
+        tableWrap.style.display =
+            "block";
 
-        }
-    );
+    }
 
 
     solicitacoes.forEach(
@@ -794,7 +1013,10 @@ function renderizarSolicitacoes() {
 
                     <div class="product-name">
 
-                        ${item.produto || "-"}
+                        ${escaparHtml(
+                            item.produto ||
+                            "-"
+                        )}
 
                     </div>
 
@@ -802,7 +1024,9 @@ function renderizarSolicitacoes() {
                         item.codigo
                             ? `
                                 <span class="product-code">
-                                    Código: ${item.codigo}
+                                    Código: ${escaparHtml(
+                                        item.codigo
+                                    )}
                                 </span>
                               `
                             : ""
@@ -813,8 +1037,14 @@ function renderizarSolicitacoes() {
 
                 <td>
 
-                    ${item.estoqueAtual ?? 0}
-                    ${item.unidade || "UN"}
+                    ${Number(
+                        item.estoqueAtual || 0
+                    )}
+
+                    ${escaparHtml(
+                        item.unidade ||
+                        "UN"
+                    )}
 
                 </td>
 
@@ -822,8 +1052,16 @@ function renderizarSolicitacoes() {
                 <td>
 
                     <strong>
-                        ${item.quantidade}
-                        ${item.unidade || "UN"}
+
+                        ${Number(
+                            item.quantidade || 0
+                        )}
+
+                        ${escaparHtml(
+                            item.unidade ||
+                            "UN"
+                        )}
+
                     </strong>
 
                 </td>
@@ -831,14 +1069,19 @@ function renderizarSolicitacoes() {
 
                 <td>
 
-                    ${item.motivo || "-"}
+                    ${escaparHtml(
+                        item.motivo ||
+                        "-"
+                    )}
 
                 </td>
 
 
                 <td>
 
-                    ${formatarData(item.data)}
+                    ${formatarData(
+                        item.data
+                    )}
 
                 </td>
 
@@ -848,7 +1091,12 @@ function renderizarSolicitacoes() {
                     <span
                         class="status-badge ${statusClass}"
                     >
-                        ${item.status}
+
+                        ${escaparHtml(
+                            item.status ||
+                            "-"
+                        )}
+
                     </span>
 
                 </td>
@@ -860,9 +1108,13 @@ function renderizarSolicitacoes() {
                         class="action-button"
                         type="button"
                         title="Cancelar solicitação"
-                        data-cancelar="${item.id}"
+                        data-cancelar="${escaparHtml(
+                            item.id
+                        )}"
                     >
+
                         ×
+
                     </button>
 
                 </td>
@@ -881,6 +1133,68 @@ function renderizarSolicitacoes() {
 
 
 /* =========================================
+   OBTER CONTEXTO DO USUÁRIO
+========================================= */
+
+function obterDadosUsuarioAtual() {
+
+    let usuario = null;
+
+    try {
+
+        if (
+            typeof usuarioFirebaseAtual ===
+            "function"
+        ) {
+
+            usuario =
+                usuarioFirebaseAtual();
+
+        }
+
+    } catch (erro) {
+
+        console.error(
+            "Erro ao obter usuário Firebase:",
+            erro
+        );
+
+    }
+
+
+    let contexto = null;
+
+    try {
+
+        if (
+            typeof obterContextoGestok ===
+            "function"
+        ) {
+
+            contexto =
+                obterContextoGestok();
+
+        }
+
+    } catch (erro) {
+
+        console.error(
+            "Erro ao obter contexto Gestok:",
+            erro
+        );
+
+    }
+
+
+    return {
+        usuario,
+        contexto
+    };
+
+}
+
+
+/* =========================================
    CRIAR SOLICITAÇÃO
 ========================================= */
 
@@ -888,144 +1202,245 @@ if (solicitacaoForm) {
 
     solicitacaoForm.addEventListener(
         "submit",
-        function (event) {
+        async function (event) {
 
             event.preventDefault();
 
 
-            const produtos =
-                obterProdutos();
+            try {
+
+                const lojaId =
+                    obterLojaAtualGestok();
 
 
-            const produto =
-                produtos.find(
-                    function (item) {
+                if (!lojaId) {
 
-                        return String(item.id) ===
-                            String(
-                                produtoSelect.value
+                    alert(
+                        "Não foi possível identificar a loja atual."
+                    );
+
+                    return;
+
+                }
+
+
+                const produtos =
+                    obterProdutos();
+
+
+                const produto =
+                    produtos.find(
+                        function (item) {
+
+                            return (
+                                String(
+                                    item.id
+                                ) ===
+                                String(
+                                    produtoSelect.value
+                                )
                             );
 
-                    }
-                );
+                        }
+                    );
 
 
-            if (!produto) {
+                if (!produto) {
 
-                alert(
-                    "Selecione um produto."
-                );
+                    alert(
+                        "Selecione um produto."
+                    );
 
-                return;
+                    return;
 
-            }
+                }
 
 
-            const quantidade =
-                Number(
+                const quantidade =
+                    Number(
+                        document.getElementById(
+                            "quantidade"
+                        )?.value
+                    );
+
+
+                if (
+                    !Number.isFinite(
+                        quantidade
+                    ) ||
+                    quantidade <= 0
+                ) {
+
+                    alert(
+                        "Informe uma quantidade válida."
+                    );
+
+                    return;
+
+                }
+
+
+                const motivo =
                     document.getElementById(
-                        "quantidade"
-                    ).value
+                        "motivo"
+                    )?.value ||
+                    "Reposição de estoque";
+
+
+                const observacao =
+                    (
+                        document.getElementById(
+                            "observacao"
+                        )?.value ||
+                        ""
+                    ).trim();
+
+
+                const dadosUsuario =
+                    obterDadosUsuarioAtual();
+
+
+                const usuario =
+                    dadosUsuario.usuario;
+
+
+                const contexto =
+                    dadosUsuario.contexto;
+
+
+                const novaSolicitacao = {
+
+                    lojaId:
+
+                        lojaId,
+
+                    uid:
+
+                        usuario?.uid ||
+                        contexto?.uid ||
+                        null,
+
+                    usuario:
+
+                        contexto?.usuario ||
+                        "",
+
+                    email:
+
+                        usuario?.email ||
+                        contexto?.email ||
+                        "",
+
+                    codigoLoja:
+
+                        contexto?.codigoLoja ||
+                        "",
+
+
+                    produtoId:
+
+                        produto.id,
+
+                    produto:
+
+                        produto.nome ||
+                        "",
+
+                    codigo:
+
+                        produto.codigo ||
+                        "",
+
+
+                    estoqueAtual:
+
+                        Number(
+                            produto.quantidade ||
+                            0
+                        ),
+
+                    estoqueMinimo:
+
+                        Number(
+                            produto.estoqueMinimo ||
+                            0
+                        ),
+
+
+                    quantidade:
+
+                        quantidade,
+
+                    unidade:
+
+                        produto.unidade ||
+                        "UN",
+
+
+                    motivo:
+
+                        motivo,
+
+                    observacao:
+
+                        observacao,
+
+
+                    status:
+
+                        "Pendente",
+
+
+                    data:
+
+                        firebase.firestore
+                            .FieldValue
+                            .serverTimestamp(),
+
+
+                    criadoEm:
+
+                        firebase.firestore
+                            .FieldValue
+                            .serverTimestamp(),
+
+
+                    atualizadoEm:
+
+                        firebase.firestore
+                            .FieldValue
+                            .serverTimestamp()
+
+                };
+
+
+                await referenciaSolicitacoes(
+                    lojaId
+                ).add(
+                    novaSolicitacao
                 );
 
 
-            if (
-                !Number.isFinite(
-                    quantidade
-                ) ||
-                quantidade <= 0
-            ) {
+                fecharModalSolicitacao();
+
 
                 alert(
-                    "Informe uma quantidade válida."
+                    "Solicitação de compra criada com sucesso!"
                 );
 
-                return;
+            } catch (erro) {
+
+                console.error(
+                    "Erro ao criar solicitação:",
+                    erro
+                );
+
+
+                alert(
+                    "Não foi possível criar a solicitação. Verifique sua conexão e tente novamente."
+                );
 
             }
-
-
-            const motivo =
-                document.getElementById(
-                    "motivo"
-                ).value;
-
-
-            const observacao =
-                document.getElementById(
-                    "observacao"
-                ).value.trim();
-
-
-            const novaSolicitacao = {
-
-                id:
-                    Date.now(),
-
-                produtoId:
-                    produto.id,
-
-                produto:
-                    produto.nome,
-
-                codigo:
-                    produto.codigo || "",
-
-                estoqueAtual:
-                    Number(
-                        produto.quantidade || 0
-                    ),
-
-                estoqueMinimo:
-                    Number(
-                        produto.estoqueMinimo || 0
-                    ),
-
-                quantidade:
-                    quantidade,
-
-                unidade:
-                    produto.unidade || "UN",
-
-                motivo:
-                    motivo,
-
-                observacao:
-                    observacao,
-
-                status:
-                    "Pendente",
-
-                data:
-                    new Date().toISOString()
-
-            };
-
-
-            const solicitacoes =
-                obterSolicitacoes();
-
-
-            solicitacoes.push(
-                novaSolicitacao
-            );
-
-
-            salvarSolicitacoes(
-                solicitacoes
-            );
-
-
-            fecharModalSolicitacao();
-
-            atualizarResumo();
-
-            renderizarSolicitacoes();
-
-
-            alert(
-                "Solicitação de compra criada com sucesso!"
-            );
 
         }
     );
@@ -1041,7 +1456,7 @@ if (listaSolicitacoes) {
 
     listaSolicitacoes.addEventListener(
         "click",
-        function (event) {
+        async function (event) {
 
             const botao =
                 event.target.closest(
@@ -1058,6 +1473,11 @@ if (listaSolicitacoes) {
                 botao.dataset.cancelar;
 
 
+            if (!id) {
+                return;
+            }
+
+
             const confirmar =
                 confirm(
                     "Deseja cancelar esta solicitação?"
@@ -1069,44 +1489,53 @@ if (listaSolicitacoes) {
             }
 
 
-            const solicitacoes =
-                obterSolicitacoes();
+            try {
+
+                const lojaId =
+                    obterLojaAtualGestok();
 
 
-            const atualizadas =
-                solicitacoes.map(
-                    function (item) {
+                if (!lojaId) {
 
-                        if (
-                            String(item.id) ===
-                            String(id)
-                        ) {
+                    alert(
+                        "Não foi possível identificar a loja atual."
+                    );
 
-                            return {
+                    return;
 
-                                ...item,
+                }
 
-                                status:
-                                    "Cancelada"
 
-                            };
+                await referenciaSolicitacoes(
+                    lojaId
+                )
+                    .doc(id)
+                    .update({
 
-                        }
+                        status:
+                            "Cancelada",
 
-                        return item;
+                        atualizadoEm:
+                            firebase.firestore
+                                .FieldValue
+                                .serverTimestamp()
 
-                    }
+                    });
+
+
+            } catch (erro) {
+
+                console.error(
+                    "Erro ao cancelar solicitação:",
+                    erro
                 );
 
 
-            salvarSolicitacoes(
-                atualizadas
-            );
+                alert(
+                    "Não foi possível cancelar a solicitação."
+                );
 
-
-            atualizarResumo();
-
-            renderizarSolicitacoes();
+            }
 
         }
     );
@@ -1144,9 +1573,15 @@ if (limparFiltros) {
         "click",
         function () {
 
-            busca.value = "";
+            if (busca) {
+                busca.value = "";
+            }
 
-            filtroStatus.value = "";
+
+            if (filtroStatus) {
+                filtroStatus.value = "";
+            }
+
 
             renderizarSolicitacoes();
 
@@ -1157,45 +1592,276 @@ if (limparFiltros) {
 
 
 /* =========================================
-   ATUALIZAR QUANDO PRODUTOS MUDAR
+   FIRESTORE
 ========================================= */
 
-window.addEventListener(
-    "storage",
-    function (event) {
+function pararListenersFirestore() {
 
-        if (
-            event.key ===
-                CHAVE_PRODUTOS ||
-            event.key ===
-                CHAVE_SOLICITACOES
-        ) {
+    if (
+        typeof cancelarListenerProdutos ===
+        "function"
+    ) {
 
-            carregarProdutos();
+        cancelarListenerProdutos();
 
-            atualizarResumo();
-
-            renderizarSolicitacoes();
-
-        }
+        cancelarListenerProdutos =
+            null;
 
     }
-);
+
+
+    if (
+        typeof cancelarListenerSolicitacoes ===
+        "function"
+    ) {
+
+        cancelarListenerSolicitacoes();
+
+        cancelarListenerSolicitacoes =
+            null;
+
+    }
+
+
+    produtosCache = [];
+
+    solicitacoesCache = [];
+
+}
+
+
+/* =========================================
+   INICIAR FIRESTORE
+========================================= */
+
+function iniciarFirestoreSolicitacoes(
+    lojaId
+) {
+
+    if (!lojaId) {
+
+        console.error(
+            "Gestok: lojaId não informado."
+        );
+
+        return;
+
+    }
+
+
+    pararListenersFirestore();
+
+
+    lojaIdAtual =
+        lojaId;
+
+
+    /* =====================================
+       PRODUTOS
+    ===================================== */
+
+    cancelarListenerProdutos =
+        referenciaProdutos(
+            lojaId
+        ).onSnapshot(
+            function (snapshot) {
+
+                produtosCache =
+                    snapshot.docs
+                        .map(
+                            function (doc) {
+
+                                return {
+
+                                    id:
+                                        doc.id,
+
+                                    ...doc.data()
+
+                                };
+
+                            }
+                        );
+
+
+                carregarProdutos();
+
+                atualizarResumo();
+
+                atualizarInformacoesProduto();
+
+            },
+            function (erro) {
+
+                console.error(
+                    "Erro ao carregar produtos:",
+                    erro
+                );
+
+
+                produtosCache =
+                    [];
+
+
+                carregarProdutos();
+
+                atualizarResumo();
+
+            }
+        );
+
+
+    /* =====================================
+       SOLICITAÇÕES
+    ===================================== */
+
+    cancelarListenerSolicitacoes =
+        referenciaSolicitacoes(
+            lojaId
+        ).onSnapshot(
+            function (snapshot) {
+
+                solicitacoesCache =
+                    snapshot.docs
+                        .map(
+                            function (doc) {
+
+                                return {
+
+                                    id:
+                                        doc.id,
+
+                                    ...doc.data()
+
+                                };
+
+                            }
+                        )
+                        .sort(
+                            function (a, b) {
+
+                                return (
+                                    normalizarData(
+                                        b.data
+                                    )?.getTime() ||
+                                    0
+                                ) -
+                                (
+                                    normalizarData(
+                                        a.data
+                                    )?.getTime() ||
+                                    0
+                                );
+
+                            }
+                        );
+
+
+                atualizarResumo();
+
+                renderizarSolicitacoes();
+
+            },
+            function (erro) {
+
+                console.error(
+                    "Erro ao carregar solicitações:",
+                    erro
+                );
+
+
+                solicitacoesCache =
+                    [];
+
+
+                atualizarResumo();
+
+                renderizarSolicitacoes();
+
+            }
+        );
+
+}
+
+
+/* =========================================
+   AUTENTICAÇÃO
+========================================= */
+
+function iniciarModuloSolicitacoes() {
+
+    if (
+        typeof observarAutenticacaoGestok !==
+        "function"
+    ) {
+
+        console.error(
+            "Gestok: observarAutenticacaoGestok não está disponível."
+        );
+
+        return;
+
+    }
+
+
+    observarAutenticacaoGestok(
+        function (usuario) {
+
+            if (!usuario) {
+
+                pararListenersFirestore();
+
+                return;
+
+            }
+
+
+            const lojaId =
+                obterLojaAtualGestok();
+
+
+            if (!lojaId) {
+
+                console.error(
+                    "Gestok: não foi possível identificar a loja."
+                );
+
+                pararListenersFirestore();
+
+                return;
+
+            }
+
+
+            if (
+                lojaIdAtual === lojaId &&
+                cancelarListenerProdutos &&
+                cancelarListenerSolicitacoes
+            ) {
+
+                return;
+
+            }
+
+
+            iniciarFirestoreSolicitacoes(
+                lojaId
+            );
+
+        }
+    );
+
+}
 
 
 /* =========================================
    INICIALIZAÇÃO
 ========================================= */
 
-document.addEventListener(
-    "DOMContentLoaded",
-    function () {
+carregarProdutos();
 
-        carregarProdutos();
+atualizarResumo();
 
-        atualizarResumo();
+renderizarSolicitacoes();
 
-        renderizarSolicitacoes();
-
-    }
-);
+iniciarModuloSolicitacoes();

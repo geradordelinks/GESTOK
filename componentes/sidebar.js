@@ -75,6 +75,7 @@
             "solicitacoes",
             "perfil",
             "suporte",
+            "redes_sociais",
             "login",
             "cadastro",
             "planos"
@@ -439,6 +440,19 @@
                         </span>
 
                     </a>
+                    <a
+                    href="${urlGestok("redes_sociais/index.html")}"
+                    class="sidebar-nav-item"
+                    data-page="redes_sociais"
+                >
+                    <span class="sidebar-nav-icon">
+                        ◎
+                    </span>
+
+                    <span>
+                        Redes Sociais
+                    </span>
+                </a>
 
 
                 </nav>
@@ -794,7 +808,15 @@
                 );
 
             }
+            if (
+                pagina === "redes-sociais" &&
+                caminho.includes("/redes_sociais/")
+            ) {
 
+                item.classList.add(
+                    "active"
+                );
+            }
         });
 
     }

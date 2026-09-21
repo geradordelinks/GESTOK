@@ -72,6 +72,23 @@ document.addEventListener(
 
 
         /* =========================================
+           FIRESTORE
+        ========================================= */
+
+        let produtosCache = [];
+
+        let movimentacoesCache = [];
+
+        let lojaIdRelatorios = null;
+
+        let cancelarProdutosRelatorios = null;
+
+        let cancelarMovimentacoesRelatorios = null;
+
+        let firestoreRelatoriosInicializado = false;
+
+
+        /* =========================================
            MENU
         ========================================= */
 
@@ -218,39 +235,9 @@ document.addEventListener(
 
         function obterProdutos() {
 
-            try {
-
-                const dados =
-                    localStorage.getItem(
-                        "gestok_produtos"
-                    );
-
-
-                if (!dados) {
-
-                    return [];
-
-                }
-
-
-                const produtos =
-                    JSON.parse(dados);
-
-
-                return Array.isArray(produtos)
-                    ? produtos
-                    : [];
-
-            } catch (erro) {
-
-                console.error(
-                    "Erro ao carregar produtos:",
-                    erro
-                );
-
-                return [];
-
-            }
+            return Array.isArray(produtosCache)
+                ? produtosCache
+                : [];
 
         }
 
@@ -261,41 +248,9 @@ document.addEventListener(
 
         function obterMovimentacoes() {
 
-            try {
-
-                const dados =
-                    localStorage.getItem(
-                        "gestok_movimentacoes"
-                    );
-
-
-                if (!dados) {
-
-                    return [];
-
-                }
-
-
-                const movimentacoes =
-                    JSON.parse(dados);
-
-
-                return Array.isArray(
-                    movimentacoes
-                )
-                    ? movimentacoes
-                    : [];
-
-            } catch (erro) {
-
-                console.error(
-                    "Erro ao carregar movimentações:",
-                    erro
-                );
-
-                return [];
-
-            }
+            return Array.isArray(movimentacoesCache)
+                ? movimentacoesCache
+                : [];
 
         }
 
@@ -431,22 +386,67 @@ document.addEventListener(
             }
 
 
-            const data =
-                new Date(valor);
+            try {
+
+                if (
+                    typeof valor.toDate ===
+                    "function"
+                ) {
+
+                    const dataFirestore =
+                        valor.toDate();
+
+                    return dataFirestore instanceof Date &&
+                        !Number.isNaN(dataFirestore.getTime())
+                        ? dataFirestore
+                        : null;
+
+                }
 
 
-            if (
-                Number.isNaN(
-                    data.getTime()
-                )
-            ) {
+                if (
+                    typeof valor === "object" &&
+                    typeof valor.seconds === "number"
+                ) {
+
+                    const dataSeconds =
+                        new Date(
+                            valor.seconds * 1000
+                        );
+
+                    return Number.isNaN(
+                        dataSeconds.getTime()
+                    )
+                        ? null
+                        : dataSeconds;
+
+                }
+
+
+                const data =
+                    valor instanceof Date
+                        ? valor
+                        : new Date(valor);
+
+
+                if (
+                    Number.isNaN(
+                        data.getTime()
+                    )
+                ) {
+
+                    return null;
+
+                }
+
+
+                return data;
+
+            } catch (erro) {
 
                 return null;
 
             }
-
-
-            return data;
 
         }
 
@@ -2616,39 +2616,301 @@ document.addEventListener(
 
 
         /* =========================================
-           ATUALIZAR SE OUTRA PÁGINA ALTERAR DADOS
+           FIRESTORE - LOJA ATUAL
         ========================================= */
 
-        window.addEventListener(
-            "storage",
-            function (event) {
+        function obterLojaAtualRelatorios() {
+
+            try {
 
                 if (
-                    event.key ===
-                        "gestok_produtos" ||
-                    event.key ===
-                        "gestok_movimentacoes" ||
-                    event.key ===
-                        "gestok_conta"
+                    typeof obterLojaAtualGestok ===
+                    "function"
                 ) {
 
-                    carregarProdutos();
+                    const lojaId =
+                        obterLojaAtualGestok();
 
-                    carregarUsuario();
-
-                    atualizarPrevia();
+                    if (lojaId) {
+                        return lojaId;
+                    }
 
                 }
 
-            }
-        );
+            } catch (erro) {
 
+                console.error(
+                    "Erro ao obter loja atual:",
+                    erro
+                );
+
+            }
+
+
+            try {
+
+                const conta =
+                    obterConta();
+
+                return conta?.lojaId || null;
+
+            } catch (erro) {
+
+                return null;
+
+            }
+
+        }
+
+
+        function atualizarDadosRelatorios() {
+
+            carregarProdutos();
+
+            atualizarCampos();
+
+        }
+
+
+        function pararListenersFirestoreRelatorios() {
+
+            if (
+                typeof cancelarProdutosRelatorios ===
+                "function"
+            ) {
+
+                cancelarProdutosRelatorios();
+
+                cancelarProdutosRelatorios = null;
+
+            }
+
+
+            if (
+                typeof cancelarMovimentacoesRelatorios ===
+                "function"
+            ) {
+
+                cancelarMovimentacoesRelatorios();
+
+                cancelarMovimentacoesRelatorios = null;
+
+            }
+
+
+            produtosCache = [];
+
+            movimentacoesCache = [];
+
+            lojaIdRelatorios = null;
+
+            firestoreRelatoriosInicializado = false;
+
+        }
+
+
+        function iniciarListenersFirestoreRelatorios(
+            lojaId
+        ) {
+
+            if (
+                !lojaId ||
+                typeof firebase ===
+                    "undefined" ||
+                !firebase.firestore
+            ) {
+
+                return;
+
+            }
+
+
+            pararListenersFirestoreRelatorios();
+
+
+            lojaIdRelatorios = lojaId;
+
+            firestoreRelatoriosInicializado = true;
+
+
+            const referenciaProdutosAtual =
+                referenciaProdutos(
+                    lojaId
+                );
+
+
+            const referenciaMovimentacoesAtual =
+                referenciaMovimentacoes(
+                    lojaId
+                );
+
+
+            cancelarProdutosRelatorios =
+                referenciaProdutosAtual
+                    .onSnapshot(
+                        function (snapshot) {
+
+                            produtosCache =
+                                snapshot.docs
+                                    .map(
+                                        function (doc) {
+
+                                            return {
+                                                id: doc.id,
+                                                ...doc.data()
+                                            };
+
+                                        }
+                                    );
+
+
+                            atualizarDadosRelatorios();
+
+                        },
+                        function (erro) {
+
+                            console.error(
+                                "Erro ao carregar produtos dos relatórios:",
+                                erro
+                            );
+
+                            produtosCache = [];
+
+                            atualizarDadosRelatorios();
+
+                        }
+                    );
+
+
+            cancelarMovimentacoesRelatorios =
+                referenciaMovimentacoesAtual
+                    .onSnapshot(
+                        function (snapshot) {
+
+                            movimentacoesCache =
+                                snapshot.docs
+                                    .map(
+                                        function (doc) {
+
+                                            return {
+                                                id: doc.id,
+                                                ...doc.data()
+                                            };
+
+                                        }
+                                    )
+                                    .sort(
+                                        function (a, b) {
+
+                                            const dataA =
+                                                normalizarData(
+                                                    a.data
+                                                )?.getTime() || 0;
+
+                                            const dataB =
+                                                normalizarData(
+                                                    b.data
+                                                )?.getTime() || 0;
+
+                                            return dataB - dataA;
+
+                                        }
+                                    );
+
+
+                            atualizarPrevia();
+
+                        },
+                        function (erro) {
+
+                            console.error(
+                                "Erro ao carregar movimentações dos relatórios:",
+                                erro
+                            );
+
+                            movimentacoesCache = [];
+
+                            atualizarPrevia();
+
+                        }
+                    );
+
+        }
+
+
+        function iniciarRelatoriosFirestore() {
+
+            if (
+                typeof observarAutenticacaoGestok !==
+                "function"
+            ) {
+
+                console.error(
+                    "Gestok: autenticação central não está disponível."
+                );
+
+                return;
+
+            }
+
+
+            observarAutenticacaoGestok(
+                function (usuario) {
+
+                    if (!usuario) {
+
+                        pararListenersFirestoreRelatorios();
+
+                        atualizarDadosRelatorios();
+                        return;
+
+                    }
+
+
+                    const lojaId =
+                        obterLojaAtualRelatorios();
+
+
+                    if (!lojaId) {
+
+                        console.error(
+                            "Gestok: não foi possível identificar a loja atual para os relatórios."
+                        );
+
+                        pararListenersFirestoreRelatorios();
+                        atualizarDadosRelatorios();
+                        return;
+
+                    }
+
+
+                    if (
+                        firestoreRelatoriosInicializado &&
+                        lojaIdRelatorios === lojaId
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    iniciarListenersFirestoreRelatorios(
+                        lojaId
+                    );
+
+                }
+            );
+
+        }
+
+
+        /* =========================================
+           PÁGINA MOSTRADA NOVAMENTE
+        ========================================= */
 
         window.addEventListener(
             "pageshow",
             function () {
-
-                carregarProdutos();
 
                 carregarUsuario();
 
@@ -2662,11 +2924,11 @@ document.addEventListener(
            INICIALIZAÇÃO
         ========================================= */
 
-        carregarProdutos();
-
         carregarUsuario();
 
         atualizarCampos();
+
+        iniciarRelatoriosFirestore();
 
     }
 );
