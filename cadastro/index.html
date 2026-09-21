@@ -19,84 +19,14 @@
 
 </head>
 
-<!-- =========================================
-     PAINEL DE NOTIFICAÇÕES
-========================================= -->
 
-<div
-    class="notifications-panel"
-    id="notificationsPanel"
-    aria-hidden="true">
-
-    <div class="notifications-header">
-
-        <div>
-            <strong>Notificações</strong>
-            <span id="notificationsSubtitle">
-                Comunicados do Gestok
-            </span>
-        </div>
-
-        <button
-            type="button"
-            class="notifications-close"
-            id="fecharNotificacoes"
-            aria-label="Fechar notificações">
-
-            ×
-
-        </button>
-
-    </div>
-
-
-    <div class="notifications-actions">
-
-        <button
-            type="button"
-            id="marcarAvisosLidos">
-
-            Marcar todas como lidas
-
-        </button>
-
-    </div>
-
-
-    <div
-        class="notifications-list"
-        id="notificationsList">
-
-        <!-- As notificações serão carregadas aqui -->
-
-    </div>
-
-
-    <div
-        class="notifications-empty"
-        id="notificationsEmpty"
-        hidden>
-
-        <div class="notifications-empty-icon">
-            ✓
-        </div>
-
-        <strong>
-            Nenhuma notificação
-        </strong>
-
-        <span>
-            Você não possui novos comunicados.
-        </span>
-
-    </div>
-
-</div>
 <body>
 
     <main>
 
-        <!-- VOLTAR -->
+        <!-- =========================================
+             VOLTAR
+        ========================================== -->
 
         <a
             href="../planos/index.html"
@@ -106,7 +36,9 @@
         </a>
 
 
-        <!-- CARD -->
+        <!-- =========================================
+             CARD
+        ========================================== -->
 
         <section class="card">
 
@@ -136,9 +68,11 @@
             </p>
 
 
-            <!-- FORMULÁRIO -->
+            <!-- =====================================
+                 FORMULÁRIO
+            ====================================== -->
 
-            <form>
+            <form id="cadastroForm">
 
 
                 <!-- NOME DA EMPRESA -->
@@ -245,17 +179,20 @@
 
                 <!-- BOTÃO -->
 
-                <button type="submit">
-
+                <button
+                    type="submit"
+                    id="btnCriarConta"
+                >
                     Criar minha conta →
-
                 </button>
 
 
             </form>
 
 
-            <!-- LOGIN -->
+            <!-- =====================================
+                 LOGIN
+            ====================================== -->
 
             <div class="login">
 
@@ -273,23 +210,49 @@
     </main>
 
 
-    <!-- AUTENTICAÇÃO -->
-
+    <!-- =========================================
+         FIREBASE
+    ========================================== -->
 
     <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+
     <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+
     <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+
+
     <script src="../firebase/config.js"></script>
-    <script>firebase.initializeApp(firebaseConfig);</script>
+
+
+    <script>
+
+        if (
+            typeof firebase !== "undefined" &&
+            !firebase.apps.length
+        ) {
+
+            firebase.initializeApp(
+                firebaseConfig
+            );
+
+        }
+
+    </script>
+
 
     <script src="../firebase/auth.js"></script>
+
     <script src="../firebase/firestore.js"></script>
+
     <script src="../auth.js"></script>
 
 
-    <!-- SCRIPT -->
+    <!-- =========================================
+         SCRIPT DO CADASTRO
+    ========================================== -->
 
     <script src="script.js"></script>
+
 
 </body>
 

@@ -16,17 +16,17 @@
         rel="stylesheet"
         href="style.css"
     >
+
     <link
         rel="stylesheet"
         href="../componentes/sidebar.css"
     >
+
 </head>
 
 <body>
+
     <div id="gestok-sidebar-container"></div>
-    <!-- =========================================
-         HEADER
-    ========================================== -->
 
     <header class="header">
 
@@ -53,15 +53,7 @@
 
     </header>
 
-
-    <!-- =========================================
-         CONTEÚDO PRINCIPAL
-    ========================================== -->
-
     <main class="main-content">
-
-
-        <!-- Voltar -->
 
         <a
             href="../sistema/index.html"
@@ -69,11 +61,6 @@
         >
             ← Voltar ao Dashboard
         </a>
-
-
-        <!-- =========================================
-             CABEÇALHO
-        ========================================== -->
 
         <section class="hero">
 
@@ -95,17 +82,7 @@
 
         </section>
 
-
-        <!-- =========================================
-             PAINEL
-        ========================================== -->
-
         <section class="panel">
-
-
-            <!-- =========================================
-                 FILTROS
-            ========================================== -->
 
             <div class="filters">
 
@@ -113,8 +90,8 @@
                     id="busca"
                     type="search"
                     placeholder="Buscar produto, código ou motivo..."
+                    autocomplete="off"
                 >
-
 
                 <select id="filtroTipo">
 
@@ -131,7 +108,6 @@
                     </option>
 
                 </select>
-
 
                 <select id="filtroPeriodo">
 
@@ -153,20 +129,22 @@
 
                 </select>
 
-
                 <button
                     id="limparHistorico"
                     type="button"
+                    disabled
                 >
                     Limpar histórico
                 </button>
 
             </div>
 
-
-            <!-- =========================================
-                 TABELA
-            ========================================== -->
+            <div
+                id="statusMovimentacoes"
+                style="padding: 0 0 12px; color: #98a2b3; font-size: 10px;"
+            >
+                Carregando movimentações...
+            </div>
 
             <div class="table-wrap">
 
@@ -176,46 +154,22 @@
 
                         <tr>
 
-                            <th>
-                                Tipo
-                            </th>
-
-                            <th>
-                                Produto
-                            </th>
-
-                            <th>
-                                Quantidade
-                            </th>
-
-                            <th>
-                                Estoque
-                            </th>
-
-                            <th>
-                                Motivo
-                            </th>
-
-                            <th>
-                                Data
-                            </th>
+                            <th>Tipo</th>
+                            <th>Produto</th>
+                            <th>Quantidade</th>
+                            <th>Estoque</th>
+                            <th>Motivo</th>
+                            <th>Data</th>
 
                         </tr>
 
                     </thead>
 
-
-                    <tbody id="listaMovimentacoes">
-                    </tbody>
+                    <tbody id="listaMovimentacoes"></tbody>
 
                 </table>
 
             </div>
-
-
-            <!-- =========================================
-                 ESTADO VAZIO
-            ========================================== -->
 
             <div
                 class="empty-state"
@@ -223,9 +177,7 @@
                 style="display: none;"
             >
 
-                <div>
-                    ↔
-                </div>
+                <div>↔</div>
 
                 <strong>
                     Nenhuma movimentação encontrada
@@ -241,17 +193,26 @@
 
     </main>
 
-
-    <!-- =========================================
-         JAVASCRIPT
-    ========================================== -->
     <script src="../componentes/sidebar.js"></script>
+
     <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
-    <script src="../firebase/config.js"></script>
-    <script>firebase.initializeApp(firebaseConfig);</script>
 
+    <script src="../firebase/config.js"></script>
+
+    <script>
+        if (
+            typeof firebase !== "undefined" &&
+            typeof firebaseConfig !== "undefined" &&
+            !firebase.apps.length
+        ) {
+            firebase.initializeApp(firebaseConfig);
+        }
+    </script>
+
+    <script src="../firebase/auth.js"></script>
+    <script src="../firebase/firestore.js"></script>
     <script src="../auth.js"></script>
     <script src="script.js"></script>
 

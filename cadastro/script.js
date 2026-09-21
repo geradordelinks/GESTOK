@@ -13,7 +13,9 @@ document.addEventListener(
         ===================================== */
 
         const form =
-            document.querySelector("form");
+            document.getElementById(
+                "cadastroForm"
+            );
 
 
         const mensagem =
@@ -22,7 +24,17 @@ document.addEventListener(
             );
 
 
+        const botao =
+            document.getElementById(
+                "btnCriarConta"
+            );
+
+
         if (!form) {
+
+            console.error(
+                "Formulário de cadastro não encontrado."
+            );
 
             return;
 
@@ -75,10 +87,28 @@ document.addEventListener(
 
 
                 /* =================================
+                   LIMPAR VALORES
+                ================================= */
+
+                const nomeLimpo =
+                    nome.trim();
+
+
+                const emailLimpo =
+                    email.trim()
+                        .toLowerCase();
+
+
+                const usuarioLimpo =
+                    usuario.trim()
+                        .toLowerCase();
+
+
+                /* =================================
                    VALIDAÇÃO DO NOME
                 ================================= */
 
-                if (!nome.trim()) {
+                if (!nomeLimpo) {
 
                     mostrarMensagem(
                         "Digite o nome da empresa.",
@@ -94,7 +124,7 @@ document.addEventListener(
                    VALIDAÇÃO DO E-MAIL
                 ================================= */
 
-                if (!email.trim()) {
+                if (!emailLimpo) {
 
                     mostrarMensagem(
                         "Digite seu e-mail.",
@@ -109,12 +139,6 @@ document.addEventListener(
                 /* =================================
                    VALIDAÇÃO DO USUÁRIO
                 ================================= */
-
-                const usuarioLimpo =
-                    usuario
-                        .trim()
-                        .toLowerCase();
-
 
                 if (!usuarioLimpo) {
 
@@ -204,12 +228,6 @@ document.addEventListener(
                    DESABILITAR BOTÃO
                 ================================= */
 
-                const botao =
-                    form.querySelector(
-                        "button[type='submit']"
-                    );
-
-
                 if (botao) {
 
                     botao.disabled =
@@ -221,26 +239,46 @@ document.addEventListener(
                 }
 
 
+                mostrarMensagem(
+                    "Criando sua conta...",
+                    false
+                );
+
+
                 /* =================================
                    CRIAR CONTA
                 ================================= */
 
                 let resultado;
 
+
                 try {
+
+                    if (
+                        typeof criarContaGestok !==
+                        "function"
+                    ) {
+
+                        throw new Error(
+                            "A função criarContaGestok não foi carregada."
+                        );
+
+                    }
+
 
                     resultado =
                         await criarContaGestok(
 
-                            nome,
+                            nomeLimpo,
 
-                            email,
+                            emailLimpo,
 
                             usuarioLimpo,
 
                             senha
 
                         );
+
 
                 } catch (erro) {
 
@@ -249,28 +287,42 @@ document.addEventListener(
                         erro
                     );
 
+
                     resultado = {
 
                         ok: false,
 
                         mensagem:
-                            typeof mensagemErroFirebaseGestok === "function"
-                                ? mensagemErroFirebaseGestok(erro)
+                            typeof mensagemErroFirebaseGestok ===
+                            "function"
+
+                                ? mensagemErroFirebaseGestok(
+                                    erro
+                                )
+
                                 : "Não foi possível criar a conta. Tente novamente."
 
                     };
 
                 }
 
+
                 /* =================================
                    ERRO
                 ================================= */
 
-                if (!resultado.ok) {
+                if (
+                    !resultado ||
+                    !resultado.ok
+                ) {
 
                     mostrarMensagem(
-                        resultado.mensagem,
+
+                        resultado?.mensagem ||
+                        "Não foi possível criar a conta. Tente novamente.",
+
                         true
+
                     );
 
 
@@ -295,8 +347,11 @@ document.addEventListener(
                 ================================= */
 
                 mostrarMensagem(
+
                     "Conta criada com sucesso! Vamos para o pagamento...",
+
                     false
+
                 );
 
 
