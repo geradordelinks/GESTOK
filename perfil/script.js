@@ -1175,3 +1175,97 @@ window.addEventListener(
 
     }
 );
+/* =========================================
+   LOGOUT
+========================================= */
+
+const btnLogout =
+    document.getElementById(
+        "btnLogout"
+    );
+
+
+if (btnLogout) {
+
+    btnLogout.addEventListener(
+        "click",
+        async function () {
+
+            const confirmar =
+                window.confirm(
+                    "Deseja realmente sair da sua conta?"
+                );
+
+            if (!confirmar) {
+                return;
+            }
+
+            btnLogout.disabled =
+                true;
+
+            btnLogout.textContent =
+                "Saindo...";
+
+            try {
+
+                if (
+                    typeof sairGestok ===
+                    "function"
+                ) {
+
+                    await sairGestok();
+
+                } else {
+
+                    await firebase
+                        .auth()
+                        .signOut();
+
+                    localStorage.removeItem(
+                        "gestok_conta"
+                    );
+
+                    localStorage.removeItem(
+                        "gestok_sessao"
+                    );
+
+                    localStorage.removeItem(
+                        "gestok_nome"
+                    );
+
+                    localStorage.removeItem(
+                        "gestok_email"
+                    );
+
+                    localStorage.removeItem(
+                        "gestok_senha"
+                    );
+
+                    window.location.href =
+                        "../login/index.html";
+
+                }
+
+            } catch (erro) {
+
+                console.error(
+                    "Erro ao sair:",
+                    erro
+                );
+
+                alert(
+                    "Não foi possível sair da conta."
+                );
+
+                btnLogout.disabled =
+                    false;
+
+                btnLogout.textContent =
+                    "Sair da conta";
+
+            }
+
+        }
+    );
+
+}

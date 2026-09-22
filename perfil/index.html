@@ -188,6 +188,13 @@
             >
                 Salvar alterações
             </button>
+            <button
+            type="button"
+            id="btnLogout"
+            class="logout-profile-button"
+            >
+            Sair da conta
+            </button>
 
 
             <span
@@ -235,8 +242,6 @@
                 </button>
 
             </div>
-
-
         </section>
 
 
@@ -365,8 +370,76 @@
 
 
     </main>
-    <script src="../componentes/sidebar.js"></script>
-    <script src="script.js"></script>
+<!-- =========================================
+     FIREBASE
+========================================= -->
+
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+
+
+<!-- =========================================
+     CONFIGURAÇÃO FIREBASE
+========================================= -->
+
+<script src="../firebase/config.js"></script>
+
+
+<!-- =========================================
+     INICIALIZAÇÃO FIREBASE
+========================================= -->
+
+<script>
+
+    if (
+        typeof firebase !== "undefined" &&
+        typeof firebaseConfig !== "undefined"
+    ) {
+
+        if (!firebase.apps.length) {
+
+            firebase.initializeApp(
+                firebaseConfig
+            );
+
+        }
+
+    }
+
+</script>
+
+
+<!-- =========================================
+     FIREBASE AUTH / FIRESTORE
+========================================= -->
+
+<script src="../firebase/auth.js"></script>
+
+<script src="../firebase/firestore.js"></script>
+
+
+<!-- =========================================
+     AUTH CENTRAL DO GESTOK
+========================================= -->
+
+<script src="../auth.js"></script>
+
+
+<!-- =========================================
+     SIDEBAR
+========================================= -->
+
+<script src="../componentes/sidebar.js"></script>
+
+
+<!-- =========================================
+     SCRIPT DO PERFIL
+========================================= -->
+
+<script src="script.js"></script>
 </body>
 
 </html>

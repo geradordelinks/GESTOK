@@ -603,6 +603,10 @@ async function gerarCodigoLojaGestok(usuario = "") {
    PAGAMENTO APROVADO
 ========================================= */
 
+/* =========================================
+   PAGAMENTO / TESTE GRATUITO
+========================================= */
+
 function pagamentoAprovadoGestok(
     conta = obterContaGestok()
 ) {
@@ -617,12 +621,36 @@ function pagamentoAprovadoGestok(
     }
 
 
+    const assinatura =
+        conta.assinatura;
+
+
+    /* =====================================
+       TESTE GRATUITO DE 30 DIAS
+    ===================================== */
+
+    if (
+        assinatura.status ===
+            "teste_gratis" &&
+        assinatura.pagamento ===
+            "gratis"
+    ) {
+
+        return true;
+
+    }
+
+
+    /* =====================================
+       ASSINATURA PAGA
+    ===================================== */
+
     return (
+        assinatura.status ===
+            "ativa" &&
 
-        conta.assinatura.status === "ativa" &&
-
-        conta.assinatura.pagamento === "aprovado"
-
+        assinatura.pagamento ===
+            "aprovado"
     );
 
 }
@@ -861,7 +889,15 @@ async function criarContaGestok(
         const agora =
             firebase.firestore.FieldValue
                 .serverTimestamp();
+        const inicioTeste =
+            new Date();
 
+        const vencimentoTeste =
+            new Date(inicioTeste);
+
+        vencimentoTeste.setDate(
+            vencimentoTeste.getDate() + 30
+        );
 
         await lojaRef.set({
 
@@ -891,21 +927,24 @@ async function criarContaGestok(
                 dias:
                     30,
 
+                tipo:
+                    "teste_gratis",
+
                 inicio:
-                    null,
+                    inicioTeste,
 
                 vencimento:
-                    null,
+                    vencimentoTeste,
 
                 status:
-                    "aguardando_pagamento",
+                    "teste_gratis",
 
                 pagamento:
-                    "pendente"
+                    "gratis"
 
             }
 
-        });
+});
 
 
         console.log(
@@ -1015,17 +1054,20 @@ async function criarContaGestok(
                 dias:
                     30,
 
+                tipo:
+                    "teste_gratis",
+
                 inicio:
-                    null,
+                    inicioTeste.toISOString(),
 
                 vencimento:
-                    null,
+                    vencimentoTeste.toISOString(),
 
                 status:
-                    "aguardando_pagamento",
+                    "teste_gratis",
 
                 pagamento:
-                    "pendente"
+                    "gratis"
 
             },
 
@@ -2004,18 +2046,41 @@ async function sairGestok() {
 
     }
 
-
     localStorage.removeItem(
-        GESTOK_SESSAO
+        "gestok_sessao"
     );
 
     localStorage.removeItem(
-        GESTOK_CONTA
+        "gestok_conta"
     );
 
+    localStorage.removeItem(
+        "gestok_nome"
+    );
 
-    window.location.href =
-        caminhoLoginGestok();
+    localStorage.removeItem(
+        "gestok_email"
+    );
+
+    localStorage.removeItem(
+        "gestok_senha"
+    );
+
+    if (
+        typeof definirContextoGestok ===
+        "function"
+    ) {
+
+        definirContextoGestok(
+            null,
+            null
+        );
+
+    }
+
+    window.location.replace(
+        caminhoLoginGestok()
+    );
 
 }
 

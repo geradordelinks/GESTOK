@@ -733,3 +733,26 @@ body {
 
     margin-top: 2px;
 }
+.logout-profile-button {
+    width: 100%;
+    margin-top: 18px;
+    padding: 13px 16px;
+    border: 1px solid #f0caca;
+    border-radius: 10px;
+    background: #fff5f5;
+    color: #d64545;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: .2s ease;
+}
+
+.logout-profile-button:hover {
+    background: #ffeaea;
+    border-color: #e5b0b0;
+}
+
+.logout-profile-button:disabled {
+    opacity: .6;
+    cursor: wait;
+}
