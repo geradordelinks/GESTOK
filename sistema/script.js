@@ -998,422 +998,90 @@ function escaparHtmlNotificacaoGestok(
 
 
 /* =========================================
-   RENDERIZAR NOTIFICAÇÕES
+RENDERIZAR NOTIFICAÇÕES
 ========================================= */
-
-function renderizarNotificacoesGestok() {
-
-    const lista =
-        document.getElementById(
-            "gestokNotificationList"
-        );
-
-
-    if (!lista) {
-
-        return;
-
-    }
-
-
-    if (
-        notificacoesGestok.length === 0
-    ) {
-
-        lista.innerHTML = `
-
-            <div class="gestok-notification-empty">
-
-                <div class="gestok-notification-empty-icon">
-                    ✓
-                </div>
-
-                <strong>
-                    Tudo certo!
-                </strong>
-
-                <span>
-                    Nenhuma notificação nova.
-                </span>
-
-            </div>
-
-        `;
-
-        return;
-
-    }
-
-
-    lista.innerHTML =
-        notificacoesGestok
-            .map(
-                function (item) {
-
-                    const tipo =
-                        item.tipo ||
-                        "informativa";
-
-
-                    const titulo =
-                        escaparHtmlNotificacaoGestok(
-                            item.titulo ||
-                            "Notificação"
-                        );
-
-
-                    const mensagem =
-                        escaparHtmlNotificacaoGestok(
-                            item.mensagem ||
-                            ""
-                        );
-
-
-                    const data =
-                        formatarDataNotificacaoGestok(
-                            item.data
-                        );
-
-
-                    return `
-
-                        <article
-                            class="gestok-notification-item ${tipo}"
-                        >
-
-                            <div
-                                class="gestok-notification-icon"
-                            >
-                                !
-                            </div>
-
-
-                            <div
-                                class="gestok-notification-content"
-                            >
-
-                                <strong>
-                                    ${titulo}
-                                </strong>
-
-
-                                <p>
-                                    ${mensagem}
-                                </p>
-
-
-                                <small>
-                                    ${data}
-                                </small>
-
-                            </div>
-
-                        </article>
-
-                    `;
-
-                }
-            )
-            .join("");
-
-}
-
-
-/* =========================================
-   CARREGAR NOTIFICAÇÕES
-========================================= */
-
-function iniciarNotificacoesGestok() {
-
-    if (
-        typeof firebase ===
-            "undefined" ||
-        !firebase.firestore
-    ) {
-
-        console.error(
-            "Firebase Firestore não foi carregado."
-        );
-
-        return;
-
-    }
-
-
-    const db =
-        firebase.firestore();
-
-
-    /* -----------------------------------------
-       EVITAR LISTENER DUPLICADO
-    ----------------------------------------- */
-
-    if (
-        listenerNotificacoesGestok
-    ) {
-
-        listenerNotificacoesGestok();
-
-    }
-
-
-    /* -----------------------------------------
-       ESCUTAR FIRESTORE EM TEMPO REAL
-    ----------------------------------------- */
-
-    listenerNotificacoesGestok =
-        db
-            .collection(
-                "notificacoes"
-            )
-            .where(
-                "ativa",
-                "==",
-                true
-            )
-            .onSnapshot(
-                function (snapshot) {
-
-                    notificacoesGestok =
-                        snapshot.docs
-
-                            .map(
-                                function (doc) {
-
-                                    return {
-
-                                        id:
-                                            doc.id,
-
-                                        ...doc.data()
-
-                                    };
-
-                                }
-                            )
-
-                            .filter(
-                                function (item) {
-
-                                    return (
-
-                                        item.destino ===
-                                            "todas" ||
-
-                                        item.lojasDestino ===
-                                            "todas"
-
-                                    );
-
-                                }
-                            )
-
-                            .sort(
-                                function (a, b) {
-
-                                    const dataA =
-                                        a.data &&
-                                        typeof a.data.toDate ===
-                                            "function"
-                                            ? a.data.toDate().getTime()
-                                            : new Date(
-                                                a.data || 0
-                                            ).getTime();
-
-
-                                    const dataB =
-                                        b.data &&
-                                        typeof b.data.toDate ===
-                                            "function"
-                                            ? b.data.toDate().getTime()
-                                            : new Date(
-                                                b.data || 0
-                                            ).getTime();
-
-
-                                    return dataB - dataA;
-
-                                }
-                            );
-
-
-                    atualizarContadorNotificacoesGestok();
-
-                    renderizarNotificacoesGestok();
-
-                },
-
-                function (erro) {
-
-                    console.error(
-                        "Erro ao carregar notificações:",
-                        erro
-                    );
-
-                }
-            );
-
-}
-
-
-/* =========================================
-   BOTÃO DO SINO
-========================================= */
-
-if (notificationButton) {
-
-    notificationButton.addEventListener(
-        "click",
-        function () {
-
-            const painel =
-                criarPainelNotificacoesGestok();
-
-
-            painel.classList.toggle(
-                "active"
-            );
-
-
-            renderizarNotificacoesGestok();
-
-        }
-    );
-
-}
-
-
-/* =========================================
-   INICIALIZAR
-========================================= */
-
-document.addEventListener(
-    "DOMContentLoaded",
-    function () {
-
-        criarPainelNotificacoesGestok();
-
-        iniciarNotificacoesGestok();
-
-    }
-);
-
 
 function atualizarNotificacoes() {
 
-    if (!notificationsList) {
-        return;
-    }
+if (!notificationsList) {
+    return;
+}
 
 
-    const avisos =
-        obterAvisosSistema()
-            .filter(
-                aviso =>
-                    aviso &&
-                    aviso.id != null
-            )
-            .sort(
-                (a, b) =>
-                    new Date(
-                        b.data || 0
-                    ) -
-                    new Date(
-                        a.data || 0
-                    )
-            );
+atualizarBadgeNotificacoes();
 
 
-    const lidos =
-        obterAvisosLidos();
+if (
+    !notificacoesFirestore.length
+) {
 
-
-    const naoLidos =
-        avisos.filter(
-            aviso =>
-                !lidos.includes(
-                    String(aviso.id)
-                )
-        );
-
-
-    const dot =
-        notificationButton?.querySelector(
-            ".notification-dot"
-        );
-
-
-    if (dot) {
-
-        dot.style.display =
-            naoLidos.length
-                ? "block"
-                : "none";
-
-    }
-
-
-    if (!avisos.length) {
-
-        notificationsList.innerHTML =
-            "";
-
-        if (notificationsEmpty) {
-
-            notificationsEmpty.hidden =
-                false;
-
-        }
-
-        return;
-
-    }
-
+    notificationsList.innerHTML =
+        "";
 
     if (notificationsEmpty) {
 
         notificationsEmpty.hidden =
-            true;
+            false;
 
     }
 
+    return;
 
-    notificationsList.innerHTML =
-        avisos
-            .slice(0, 10)
-            .map(function (aviso) {
+}
+
+
+if (notificationsEmpty) {
+
+    notificationsEmpty.hidden =
+        true;
+
+}
+
+
+notificationsList.innerHTML =
+    notificacoesFirestore
+        .slice(0, 20)
+        .map(
+            function (aviso) {
 
                 const id =
-                    String(aviso.id);
+                    String(
+                        aviso.id
+                    );
+
 
                 const lido =
-                    lidos.includes(id);
+                    idsNotificacoesLidas.has(
+                        id
+                    );
 
-                const tipo =
-                    String(
-                        aviso.tipo || ""
-                    )
-                    .toLowerCase();
+
+                const classeLida =
+                    lido
+                        ? "is-read"
+                        : "is-unread";
+
+
+                const classeTipo =
+                    obterClasseNotificacao(
+                        aviso.tipo
+                    );
 
 
                 const icone =
-                    tipo.includes("manuten")
-                        ? "🔧"
-                        : tipo.includes("atual")
-                            ? "↻"
-                            : tipo.includes("recurso")
-                                ? "✦"
-                                : "ℹ";
+                    obterIconeNotificacao(
+                        aviso.tipo
+                    );
 
 
                 return `
 
                     <article
-                        class="notification-item ${
-                            lido
-                                ? "is-read"
-                                : "is-unread"
-                        }"
+                        class="
+                            notification-item
+                            ${classeLida}
+                            ${classeTipo}
+                        "
                         data-aviso-id="${escaparHtml(id)}"
                     >
 
@@ -1421,37 +1089,44 @@ function atualizarNotificacoes() {
                             ${icone}
                         </div>
 
+
                         <div class="notification-item-content">
 
                             <div class="notification-item-top">
 
                                 <strong>
-                                    ${
-                                        escaparHtml(
-                                            aviso.titulo ||
-                                            "Aviso do sistema"
-                                        )
-                                    }
+                                    ${escaparHtml(
+                                        aviso.titulo ||
+                                        "Aviso do sistema"
+                                    )}
                                 </strong>
+
 
                                 ${
                                     lido
                                         ? ""
-                                        : '<span class="notification-new">NOVO</span>'
+                                        : `
+                                            <span class="notification-new">
+                                                NOVO
+                                            </span>
+                                        `
                                 }
 
                             </div>
 
+
                             <p>
-                                ${
-                                    escaparHtml(
-                                        aviso.mensagem || ""
-                                    )
-                                }
+                                ${escaparHtml(
+                                    aviso.mensagem ||
+                                    ""
+                                )}
                             </p>
 
+
                             <small>
-                                ${formatarDataAviso(aviso.data)}
+                                ${formatarDataAviso(
+                                    aviso.data
+                                )}
                             </small>
 
                         </div>
@@ -1460,167 +1135,354 @@ function atualizarNotificacoes() {
 
                 `;
 
-            })
-            .join("");
-
-
-    notificationsList
-        .querySelectorAll(
-            ".notification-item"
+            }
         )
-        .forEach(function (item) {
+        .join("");
+
+
+notificationsList
+    .querySelectorAll(
+        ".notification-item"
+    )
+    .forEach(
+        function (item) {
 
             item.addEventListener(
                 "click",
                 function () {
 
                     const id =
-                        item.dataset.avisoId;
+                        this.dataset.avisoId;
 
-                    const ids =
-                        obterAvisosLidos();
-
-
-                    if (!ids.includes(id)) {
-
-                        ids.push(id);
-
-                        salvarAvisosLidos(
-                            ids
-                        );
-
-                        atualizarNotificacoes();
-
+                    if (!id) {
+                        return;
                     }
+
+
+                    idsNotificacoesLidas.add(
+                        String(id)
+                    );
+
+                    salvarAvisosLidos();
+
+                    atualizarNotificacoes();
 
                 }
             );
 
-        });
+        }
+    );
+
+}
+
+/* =========================================
+OUVIR FIRESTORE EM TEMPO REAL
+========================================= */
+
+function iniciarListenerNotificacoes() {
+
+if (
+    cancelarListenerNotificacoes
+) {
+
+    cancelarListenerNotificacoes();
+
+    cancelarListenerNotificacoes =
+        null;
 
 }
 
 
+notificacoesFirestore =
+    [];
+
+atualizarNotificacoes();
+
+
+if (
+    typeof firebase ===
+    "undefined"
+) {
+
+    console.error(
+        "Firebase não está disponível para notificações."
+    );
+
+    return;
+
+}
+
+
+if (
+    !firebase.firestore
+) {
+
+    console.error(
+        "Firestore não está disponível para notificações."
+    );
+
+    return;
+
+}
+
+
+cancelarListenerNotificacoes =
+    firebase
+        .firestore()
+        .collection(
+            "notificacoes"
+        )
+        .where(
+            "ativa",
+            "==",
+            true
+        )
+        .onSnapshot(
+            function (snapshot) {
+
+                const lista =
+                    [];
+
+
+                snapshot.forEach(
+                    function (documento) {
+
+                        const dados =
+                            documento.data() ||
+                            {};
+
+
+                        if (
+                            !notificacaoEhParaTodasAsLojas(
+                                dados
+                            )
+                        ) {
+
+                            return;
+
+                        }
+
+
+                        lista.push({
+
+                            id:
+                                documento.id,
+
+                            ...dados
+
+                        });
+
+                    }
+                );
+
+
+                lista.sort(
+                    function (
+                        a,
+                        b
+                    ) {
+
+                        const dataA =
+                            converterDataNotificacao(
+                                a.data
+                            );
+
+                        const dataB =
+                            converterDataNotificacao(
+                                b.data
+                            );
+
+
+                        const tempoA =
+                            dataA
+                                ? dataA.getTime()
+                                : 0;
+
+
+                        const tempoB =
+                            dataB
+                                ? dataB.getTime()
+                                : 0;
+
+
+                        return (
+                            tempoB -
+                            tempoA
+                        );
+
+                    }
+                );
+
+
+                notificacoesFirestore =
+                    lista;
+
+
+                atualizarNotificacoes();
+
+
+                console.log(
+                    "Notificações atualizadas pelo Firestore:",
+                    lista.length
+                );
+
+            },
+            function (erro) {
+
+                console.error(
+                    "Erro ao carregar notificações do Firestore:",
+                    erro
+                );
+
+
+                notificacoesFirestore =
+                    [];
+
+
+                atualizarNotificacoes();
+
+            }
+        );
+
+}
+
+/* =========================================
+ABRIR / FECHAR JANELA EXISTENTE
+========================================= */
+
 function alternarNotificacoes() {
+
+if (!notificationsPanel) {
+    return;
+}
+
+
+const aberto =
+    notificationsPanel.classList.toggle(
+        "active"
+    );
+
+
+notificationsPanel.setAttribute(
+    "aria-hidden",
+    String(!aberto)
+);
+
+
+if (aberto) {
+
+    atualizarNotificacoes();
+
+}
+
+}
+
+/* =========================================
+SINO
+========================================= */
+
+if (notificationButton) {
+
+notificationButton.addEventListener(
+    "click",
+    function (evento) {
+
+        evento.stopPropagation();
+
+        alternarNotificacoes();
+
+    }
+);
+
+}
+
+/* =========================================
+NÃO FECHAR AO CLICAR DENTRO
+========================================= */
+
+if (notificationsPanel) {
+
+notificationsPanel.addEventListener(
+    "click",
+    function (evento) {
+
+        evento.stopPropagation();
+
+    }
+);
+
+}
+
+/* =========================================
+FECHAR AO CLICAR FORA
+========================================= */
+
+document.addEventListener(
+"click",
+function () {
 
     if (!notificationsPanel) {
         return;
     }
 
 
-    const aberto =
-        notificationsPanel.classList.toggle(
-            "active"
-        );
+    notificationsPanel.classList.remove(
+        "active"
+    );
 
 
     notificationsPanel.setAttribute(
         "aria-hidden",
-        String(!aberto)
+        "true"
     );
 
+}
 
-    if (aberto) {
+);
+
+/* =========================================
+MARCAR TODAS COMO LIDAS
+========================================= */
+
+if (marcarAvisosLidos) {
+
+marcarAvisosLidos.addEventListener(
+    "click",
+    function () {
+
+        notificacoesFirestore.forEach(
+            function (aviso) {
+
+                idsNotificacoesLidas.add(
+                    String(
+                        aviso.id
+                    )
+                );
+
+            }
+        );
+
+
+        salvarAvisosLidos();
 
         atualizarNotificacoes();
 
     }
-
-}
-
-
-if (notificationButton) {
-
-    notificationButton.addEventListener(
-        "click",
-        function (evento) {
-
-            evento.stopPropagation();
-
-            alternarNotificacoes();
-
-        }
-    );
-
-}
-
-
-if (notificationsPanel) {
-
-    notificationsPanel.addEventListener(
-        "click",
-        function (evento) {
-
-            evento.stopPropagation();
-
-        }
-    );
-
-}
-
-
-document.addEventListener(
-    "click",
-    function () {
-
-        if (!notificationsPanel) {
-            return;
-        }
-
-        notificationsPanel.classList.remove(
-            "active"
-        );
-
-        notificationsPanel.setAttribute(
-            "aria-hidden",
-            "true"
-        );
-
-    }
 );
 
-
-if (marcarAvisosLidos) {
-
-    marcarAvisosLidos.addEventListener(
-        "click",
-        function () {
-
-            salvarAvisosLidos(
-                obterAvisosSistema()
-                    .map(
-                        aviso =>
-                            String(aviso.id)
-                    )
-            );
-
-            atualizarNotificacoes();
-
-        }
-    );
-
 }
 
+/* =========================================
+INICIALIZAR NOTIFICAÇÕES
+========================================= */
 
-window.addEventListener(
-    "storage",
-    function (evento) {
+function inicializarNotificacoesGestok() {
 
-        if (
-            evento.key ===
-                CHAVE_AVISOS_SISTEMA ||
-            evento.key ===
-                CHAVE_AVISOS_LIDOS
-        ) {
+carregarAvisosLidos();
 
-            atualizarNotificacoes();
+iniciarListenerNotificacoes();
 
-        }
-
-    }
-);
-
-
+}
 /* =========================================
    DATA ATUAL
 ========================================= */
