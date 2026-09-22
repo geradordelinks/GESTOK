@@ -719,103 +719,260 @@ async function iniciarMonitoramentoMovimentacoesDashboard() {
 
 }
 /* =========================================
-   NOTIFICAÇÕES DO SISTEMA
+   NOTIFICAÇÕES DAS LOJAS
 ========================================= */
-
-const CHAVE_AVISOS_SISTEMA =
-    "gestok_avisos_sistema";
-
-const CHAVE_AVISOS_LIDOS =
-    "gestok_avisos_lidos";
-
 
 const notificationButton =
     document.getElementById(
         "notificationButton"
     );
 
-const notificationsPanel =
-    document.getElementById(
-        "notificationsPanel"
-    );
+let notificacoesGestok = [];
 
-const notificationsList =
-    document.getElementById(
-        "notificationsList"
-    );
-
-const notificationsEmpty =
-    document.getElementById(
-        "notificationsEmpty"
-    );
-
-const marcarAvisosLidos =
-    document.getElementById(
-        "marcarAvisosLidos"
-    );
+let listenerNotificacoesGestok =
+    null;
 
 
-function obterAvisosSistema() {
+/* =========================================
+   CRIAR PAINEL
+========================================= */
 
-    try {
+function criarPainelNotificacoesGestok() {
 
-        const avisos =
-            JSON.parse(
-                localStorage.getItem(
-                    CHAVE_AVISOS_SISTEMA
-                ) || "[]"
-            );
+    let painel =
+        document.getElementById(
+            "gestokNotificationPanel"
+        );
 
-        return Array.isArray(avisos)
-            ? avisos
-            : [];
+    if (painel) {
 
-    } catch (erro) {
-
-        return [];
+        return painel;
 
     }
 
-}
+
+    painel =
+        document.createElement(
+            "div"
+        );
+
+    painel.id =
+        "gestokNotificationPanel";
+
+    painel.innerHTML = `
+
+        <div class="gestok-notification-header">
+
+            <div>
+
+                <strong>
+                    Notificações
+                </strong>
+
+                <span>
+                    Avisos do Gestok
+                </span>
+
+            </div>
+
+            <button
+                type="button"
+                id="fecharNotificacoesGestok"
+                aria-label="Fechar notificações"
+            >
+                ×
+            </button>
+
+        </div>
 
 
-function obterAvisosLidos() {
+        <div
+            class="gestok-notification-list"
+            id="gestokNotificationList"
+        >
 
-    try {
+            <div class="gestok-notification-empty">
 
-        const lidos =
-            JSON.parse(
-                localStorage.getItem(
-                    CHAVE_AVISOS_LIDOS
-                ) || "[]"
-            );
+                Nenhuma notificação.
 
-        return Array.isArray(lidos)
-            ? lidos
-            : [];
+            </div>
 
-    } catch (erro) {
+        </div>
 
-        return [];
+    `;
+
+
+    document.body.appendChild(
+        painel
+    );
+
+
+    const fechar =
+        document.getElementById(
+            "fecharNotificacoesGestok"
+        );
+
+
+    if (fechar) {
+
+        fechar.addEventListener(
+            "click",
+            function () {
+
+                painel.classList.remove(
+                    "active"
+                );
+
+            }
+        );
 
     }
 
+
+    return painel;
+
 }
 
 
-function salvarAvisosLidos(ids) {
+/* =========================================
+   ATUALIZAR CONTADOR
+========================================= */
 
-    localStorage.setItem(
-        CHAVE_AVISOS_LIDOS,
-        JSON.stringify(ids)
+function atualizarContadorNotificacoesGestok() {
+
+    if (!notificationButton) {
+
+        return;
+
+    }
+
+
+    let contador =
+        notificationButton.querySelector(
+            ".gestok-notification-count"
+        );
+
+
+    if (
+        notificacoesGestok.length === 0
+    ) {
+
+        if (contador) {
+
+            contador.remove();
+
+        }
+
+        return;
+
+    }
+
+
+    if (!contador) {
+
+        contador =
+            document.createElement(
+                "span"
+            );
+
+        contador.className =
+            "gestok-notification-count";
+
+        notificationButton.appendChild(
+            contador
+        );
+
+    }
+
+
+    contador.textContent =
+        notificacoesGestok.length > 99
+            ? "99+"
+            : notificacoesGestok.length;
+
+}
+
+
+/* =========================================
+   FORMATAR DATA
+========================================= */
+
+function formatarDataNotificacaoGestok(
+    data
+) {
+
+    if (!data) {
+
+        return "";
+
+    }
+
+
+    let dataObjeto;
+
+
+    try {
+
+        if (
+            data &&
+            typeof data.toDate ===
+                "function"
+        ) {
+
+            dataObjeto =
+                data.toDate();
+
+        } else {
+
+            dataObjeto =
+                new Date(data);
+
+        }
+
+    } catch (erro) {
+
+        return "";
+
+    }
+
+
+    if (
+        !dataObjeto ||
+        Number.isNaN(
+            dataObjeto.getTime()
+        )
+    ) {
+
+        return "";
+
+    }
+
+
+    return dataObjeto.toLocaleString(
+        "pt-BR",
+        {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit"
+        }
     );
 
 }
 
 
-function escaparHtml(texto) {
+/* =========================================
+   ESCAPAR HTML
+========================================= */
 
-    return String(texto ?? "")
+function escaparHtmlNotificacaoGestok(
+    valor
+) {
+
+    return String(
+        valor ?? ""
+    )
         .replace(
             /&/g,
             "&amp;"
@@ -840,33 +997,306 @@ function escaparHtml(texto) {
 }
 
 
-function formatarDataAviso(data) {
+/* =========================================
+   RENDERIZAR NOTIFICAÇÕES
+========================================= */
 
-    const d =
-        new Date(data);
+function renderizarNotificacoesGestok() {
 
-    if (
-        Number.isNaN(
-            d.getTime()
-        )
-    ) {
+    const lista =
+        document.getElementById(
+            "gestokNotificationList"
+        );
 
-        return "Aviso do sistema";
+
+    if (!lista) {
+
+        return;
 
     }
 
-    return new Intl.DateTimeFormat(
-        "pt-BR",
-        {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit"
-        }
-    ).format(d);
+
+    if (
+        notificacoesGestok.length === 0
+    ) {
+
+        lista.innerHTML = `
+
+            <div class="gestok-notification-empty">
+
+                <div class="gestok-notification-empty-icon">
+                    ✓
+                </div>
+
+                <strong>
+                    Tudo certo!
+                </strong>
+
+                <span>
+                    Nenhuma notificação nova.
+                </span>
+
+            </div>
+
+        `;
+
+        return;
+
+    }
+
+
+    lista.innerHTML =
+        notificacoesGestok
+            .map(
+                function (item) {
+
+                    const tipo =
+                        item.tipo ||
+                        "informativa";
+
+
+                    const titulo =
+                        escaparHtmlNotificacaoGestok(
+                            item.titulo ||
+                            "Notificação"
+                        );
+
+
+                    const mensagem =
+                        escaparHtmlNotificacaoGestok(
+                            item.mensagem ||
+                            ""
+                        );
+
+
+                    const data =
+                        formatarDataNotificacaoGestok(
+                            item.data
+                        );
+
+
+                    return `
+
+                        <article
+                            class="gestok-notification-item ${tipo}"
+                        >
+
+                            <div
+                                class="gestok-notification-icon"
+                            >
+                                !
+                            </div>
+
+
+                            <div
+                                class="gestok-notification-content"
+                            >
+
+                                <strong>
+                                    ${titulo}
+                                </strong>
+
+
+                                <p>
+                                    ${mensagem}
+                                </p>
+
+
+                                <small>
+                                    ${data}
+                                </small>
+
+                            </div>
+
+                        </article>
+
+                    `;
+
+                }
+            )
+            .join("");
 
 }
+
+
+/* =========================================
+   CARREGAR NOTIFICAÇÕES
+========================================= */
+
+function iniciarNotificacoesGestok() {
+
+    if (
+        typeof firebase ===
+            "undefined" ||
+        !firebase.firestore
+    ) {
+
+        console.error(
+            "Firebase Firestore não foi carregado."
+        );
+
+        return;
+
+    }
+
+
+    const db =
+        firebase.firestore();
+
+
+    /* -----------------------------------------
+       EVITAR LISTENER DUPLICADO
+    ----------------------------------------- */
+
+    if (
+        listenerNotificacoesGestok
+    ) {
+
+        listenerNotificacoesGestok();
+
+    }
+
+
+    /* -----------------------------------------
+       ESCUTAR FIRESTORE EM TEMPO REAL
+    ----------------------------------------- */
+
+    listenerNotificacoesGestok =
+        db
+            .collection(
+                "notificacoes"
+            )
+            .where(
+                "ativa",
+                "==",
+                true
+            )
+            .onSnapshot(
+                function (snapshot) {
+
+                    notificacoesGestok =
+                        snapshot.docs
+
+                            .map(
+                                function (doc) {
+
+                                    return {
+
+                                        id:
+                                            doc.id,
+
+                                        ...doc.data()
+
+                                    };
+
+                                }
+                            )
+
+                            .filter(
+                                function (item) {
+
+                                    return (
+
+                                        item.destino ===
+                                            "todas" ||
+
+                                        item.lojasDestino ===
+                                            "todas"
+
+                                    );
+
+                                }
+                            )
+
+                            .sort(
+                                function (a, b) {
+
+                                    const dataA =
+                                        a.data &&
+                                        typeof a.data.toDate ===
+                                            "function"
+                                            ? a.data.toDate().getTime()
+                                            : new Date(
+                                                a.data || 0
+                                            ).getTime();
+
+
+                                    const dataB =
+                                        b.data &&
+                                        typeof b.data.toDate ===
+                                            "function"
+                                            ? b.data.toDate().getTime()
+                                            : new Date(
+                                                b.data || 0
+                                            ).getTime();
+
+
+                                    return dataB - dataA;
+
+                                }
+                            );
+
+
+                    atualizarContadorNotificacoesGestok();
+
+                    renderizarNotificacoesGestok();
+
+                },
+
+                function (erro) {
+
+                    console.error(
+                        "Erro ao carregar notificações:",
+                        erro
+                    );
+
+                }
+            );
+
+}
+
+
+/* =========================================
+   BOTÃO DO SINO
+========================================= */
+
+if (notificationButton) {
+
+    notificationButton.addEventListener(
+        "click",
+        function () {
+
+            const painel =
+                criarPainelNotificacoesGestok();
+
+
+            painel.classList.toggle(
+                "active"
+            );
+
+
+            renderizarNotificacoesGestok();
+
+        }
+    );
+
+}
+
+
+/* =========================================
+   INICIALIZAR
+========================================= */
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
+
+        criarPainelNotificacoesGestok();
+
+        iniciarNotificacoesGestok();
+
+    }
+);
 
 
 function atualizarNotificacoes() {
