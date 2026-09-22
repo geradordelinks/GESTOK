@@ -483,7 +483,7 @@ function atualizarDadosPerfil() {
 
     /* =====================================
        NOME NO HEADER
-       AGORA MOSTRA O USUÁRIO
+       MOSTRA O USUÁRIO
     ===================================== */
 
     if (headerName) {
@@ -631,6 +631,10 @@ function atualizarAssinatura() {
         assinatura.pagamento;
 
 
+    const tipo =
+        assinatura.tipo || "";
+
+
     const dias =
         calcularDiasRestantesPerfil(
             vencimento
@@ -643,8 +647,20 @@ function atualizarAssinatura() {
 
     if (planBadge) {
 
-        planBadge.textContent =
-            plano;
+        if (
+            status === "teste_gratis" ||
+            tipo === "teste_gratis"
+        ) {
+
+            planBadge.textContent =
+                "Teste grátis";
+
+        } else {
+
+            planBadge.textContent =
+                plano;
+
+        }
 
     }
 
@@ -671,7 +687,90 @@ function atualizarAssinatura() {
 
 
     /* =====================================
-       PAGAMENTO APROVADO + ATIVO
+       TESTE GRÁTIS ATIVO
+    ===================================== */
+
+    const testeGratisAtivo =
+        (
+            (
+                status ===
+                "teste_gratis"
+            ) ||
+            (
+                tipo ===
+                "teste_gratis"
+            )
+        ) &&
+        pagamento ===
+            "gratis" &&
+        dias > 0;
+
+
+    if (testeGratisAtivo) {
+
+        if (subscriptionStatus) {
+
+            subscriptionStatus.textContent =
+                "Período grátis";
+
+            subscriptionStatus.classList.add(
+                "active"
+            );
+
+        }
+
+
+        if (startDate) {
+
+            startDate.textContent =
+                formatarDataPerfil(
+                    inicio
+                );
+
+        }
+
+
+        if (endDate) {
+
+            endDate.textContent =
+                formatarDataPerfil(
+                    vencimento
+                );
+
+        }
+
+
+        if (daysRemaining) {
+
+            daysRemaining.textContent =
+                dias +
+                (
+                    dias === 1
+                        ? " dia"
+                        : " dias"
+                );
+
+        }
+
+
+        if (subscribeButton) {
+
+            subscribeButton.textContent =
+                "Assinar por R$ " +
+                valor
+                    .toFixed(2)
+                    .replace(".", ",");
+
+        }
+
+
+        return;
+
+    }
+
+
+    /* =====================================
+       ASSINATURA PAGA ATIVA
     ===================================== */
 
     if (
@@ -742,17 +841,24 @@ function atualizarAssinatura() {
 
 
     /* =====================================
-       PAGAMENTO PENDENTE
+       TESTE GRÁTIS EXPIRADO
     ===================================== */
 
     if (
-        pagamento !== "aprovado"
+        (
+            status ===
+            "teste_gratis"
+        ) ||
+        (
+            tipo ===
+            "teste_gratis"
+        )
     ) {
 
         if (subscriptionStatus) {
 
             subscriptionStatus.textContent =
-                "Pagamento pendente";
+                "Teste grátis expirado";
 
             subscriptionStatus.classList.remove(
                 "active"
@@ -764,7 +870,9 @@ function atualizarAssinatura() {
         if (startDate) {
 
             startDate.textContent =
-                "—";
+                formatarDataPerfil(
+                    inicio
+                );
 
         }
 
@@ -772,7 +880,9 @@ function atualizarAssinatura() {
         if (endDate) {
 
             endDate.textContent =
-                "—";
+                formatarDataPerfil(
+                    vencimento
+                );
 
         }
 
@@ -780,7 +890,7 @@ function atualizarAssinatura() {
         if (daysRemaining) {
 
             daysRemaining.textContent =
-                "—";
+                "0 dias";
 
         }
 
@@ -802,10 +912,12 @@ function atualizarAssinatura() {
 
 
     /* =====================================
-       ASSINATURA EXPIRADA
+       ASSINATURA PAGA EXPIRADA
     ===================================== */
 
     if (
+        status === "ativa" &&
+        pagamento === "aprovado" &&
         dias <= 0
     ) {
 
@@ -858,6 +970,70 @@ function atualizarAssinatura() {
                     .replace(".", ",");
 
         }
+
+
+        return;
+
+    }
+
+
+    /* =====================================
+       PAGAMENTO PENDENTE
+    ===================================== */
+
+    if (
+        pagamento !== "aprovado" &&
+        pagamento !== "gratis"
+    ) {
+
+        if (subscriptionStatus) {
+
+            subscriptionStatus.textContent =
+                "Pagamento pendente";
+
+            subscriptionStatus.classList.remove(
+                "active"
+            );
+
+        }
+
+
+        if (startDate) {
+
+            startDate.textContent =
+                "—";
+
+        }
+
+
+        if (endDate) {
+
+            endDate.textContent =
+                "—";
+
+        }
+
+
+        if (daysRemaining) {
+
+            daysRemaining.textContent =
+                "—";
+
+        }
+
+
+        if (subscribeButton) {
+
+            subscribeButton.textContent =
+                "Assinar por R$ " +
+                valor
+                    .toFixed(2)
+                    .replace(".", ",");
+
+        }
+
+
+        return;
 
     }
 
@@ -1175,6 +1351,8 @@ window.addEventListener(
 
     }
 );
+
+
 /* =========================================
    LOGOUT
 ========================================= */
@@ -1196,15 +1374,20 @@ if (btnLogout) {
                     "Deseja realmente sair da sua conta?"
                 );
 
+
             if (!confirmar) {
+
                 return;
+
             }
+
 
             btnLogout.disabled =
                 true;
 
             btnLogout.textContent =
                 "Saindo...";
+
 
             try {
 
