@@ -57,16 +57,31 @@ document.addEventListener("DOMContentLoaded", async function () {
             return;
         }
 
-        const config = await fetch(GESTOK_PAGAMENTOS_API + "/paymentConfig", {
-            method: "GET",
-            cache: "no-store"
-        }).then(async resposta => {
+        let config;
+        try {
+            const resposta = await fetch(GESTOK_PAGAMENTOS_API + "/paymentConfig", {
+                method: "GET",
+                cache: "no-store",
+                headers: { "Accept": "application/json" }
+            });
+
             const dados = await resposta.json().catch(() => ({}));
-            if (!resposta.ok || !dados.publicKey) {
-                throw new Error("Public Key do Mercado Pago não configurada no servidor.");
+            if (!resposta.ok) {
+                throw new Error(dados.mensagem || `Servidor de pagamentos respondeu HTTP ${resposta.status}.`);
             }
-            return dados;
-        });
+
+            if (!dados.publicKey) {
+                throw new Error("A Public Key do Mercado Pago não está configurada no servidor.");
+            }
+
+            config = dados;
+        } catch (erro) {
+            console.error("Falha ao carregar configuração do pagamento:", erro);
+            if (erro instanceof TypeError && /fetch/i.test(erro.message)) {
+                throw new Error("Não foi possível conectar ao servidor de pagamentos. Verifique se as Cloud Functions do Gestok foram publicadas e se o endereço da API está correto.");
+            }
+            throw erro;
+        }
 
         const mp = new MercadoPago(config.publicKey, { locale: "pt-BR" });
         const bricksBuilder = mp.bricks();
@@ -187,14 +202,20 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
 
     async function requisicaoAPI(path, options, idToken) {
-        const resposta = await fetch(GESTOK_PAGAMENTOS_API + path, {
-            method: options.method || "GET",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": "Bearer " + idToken
-            },
-            body: options.body ? JSON.stringify(options.body) : undefined
-        });
+        let resposta;
+        try {
+            resposta = await fetch(GESTOK_PAGAMENTOS_API + path, {
+                method: options.method || "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": "Bearer " + idToken
+                },
+                body: options.body ? JSON.stringify(options.body) : undefined
+            });
+        } catch (erro) {
+            console.error("Falha de rede na API de pagamentos:", erro);
+            throw new Error("Não foi possível conectar ao servidor de pagamentos. Verifique se as Cloud Functions foram publicadas e se o endereço da API está correto.");
+        }
 
         const dados = await resposta.json().catch(() => ({}));
 

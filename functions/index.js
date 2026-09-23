@@ -34,7 +34,7 @@ function cors(req, res) {
   res.set("Access-Control-Allow-Origin", permitido);
   res.set("Vary", "Origin");
   res.set("Access-Control-Allow-Headers", "Content-Type, Authorization" );
-  res.set("Access-Control-Allow-Methods", "POST, OPTIONS" );
+  res.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
 }
 
 async function usuarioAutenticado(req) {

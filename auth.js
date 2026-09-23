@@ -639,40 +639,67 @@ function pagamentoAprovadoGestok(
    ASSINATURA ATIVA
 ========================================= */
 
+function dataGestokEmMilissegundos(valor) {
+
+    if (!valor) return NaN;
+
+    // Firestore Timestamp
+    if (typeof valor.toDate === "function") {
+        const data = valor.toDate();
+        return data instanceof Date ? data.getTime() : NaN;
+    }
+
+    if (typeof valor === "object" && valor.seconds !== undefined) {
+        const segundos = Number(valor.seconds);
+        const nanos = Number(valor.nanoseconds || 0);
+        if (Number.isFinite(segundos)) {
+            return (segundos * 1000) + Math.floor(nanos / 1000000);
+        }
+    }
+
+    const data = new Date(valor);
+    return data.getTime();
+}
+
 function assinaturaAtivaGestok(
     conta = obterContaGestok()
 ) {
 
-    if (
-        !pagamentoAprovadoGestok(conta)
-    ) {
-
+    if (!conta || !conta.assinatura) {
         return false;
-
     }
 
+    const assinatura = conta.assinatura;
 
     if (
-        !conta.assinatura.vencimento
+        assinatura.status !== "ativa" ||
+        assinatura.pagamento !== "aprovado"
     ) {
-
         return false;
-
     }
 
+    let vencimento =
+        dataGestokEmMilissegundos(assinatura.vencimento);
 
-    const vencimento =
-        new Date(
-            conta.assinatura.vencimento
-        ).getTime();
+    // Compatibilidade com contas antigas que possuem apenas a data de início.
+    // Nunca cria uma assinatura nova: somente calcula o vencimento que já
+    // deveria existir para uma assinatura paga de 30 dias.
+    if (
+        !Number.isFinite(vencimento) &&
+        assinatura.inicio
+    ) {
+        const inicio =
+            dataGestokEmMilissegundos(assinatura.inicio);
 
+        if (Number.isFinite(inicio)) {
+            const dias = Number(assinatura.dias || 30);
+            vencimento = inicio + (dias * 24 * 60 * 60 * 1000);
+        }
+    }
 
     return (
-
         Number.isFinite(vencimento) &&
-
         vencimento > Date.now()
-
     );
 
 }
@@ -1831,9 +1858,9 @@ function diasRestantesGestok(
 
 
     const vencimento =
-        new Date(
+        dataGestokEmMilissegundos(
             conta.assinatura.vencimento
-        ).getTime();
+        );
 
 
     if (
