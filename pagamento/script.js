@@ -1,6 +1,12 @@
 /* =========================================
    GESTOK - PAGAMENTO REAL
    MERCADO PAGO + FIREBASE AUTH
+   -----------------------------------------
+   IMPORTANTE:
+   A página de pagamento NÃO pode considerar
+   firebase.auth().currentUser como disponível
+   imediatamente. O Firebase restaura a sessão
+   de forma assíncrona.
 ========================================= */
 
 document.addEventListener("DOMContentLoaded", async function () {
@@ -15,16 +21,25 @@ document.addEventListener("DOMContentLoaded", async function () {
         return;
     }
 
-    if (!window.MercadoPago) {
-        mostrarMensagem("Não foi possível carregar o Mercado Pago. Verifique sua conexão e tente novamente.", true);
-        return;
-    }
-
-    const usuario = firebase.auth().currentUser;
+    /*
+       Aguarda o Firebase restaurar a sessão.
+       Este é o ponto principal da correção:
+       quando uma assinatura expirada manda o
+       usuário para esta página, o Firebase ainda
+       pode estar recuperando o usuário e
+       auth.currentUser pode ser null por alguns
+       instantes.
+    */
+    const usuario = await aguardarUsuarioFirebase();
 
     if (!usuario) {
         mostrarMensagem("Sua sessão expirou. Faça login novamente.", true);
-        setTimeout(() => window.location.href = "../login/index.html", 1200);
+        setTimeout(() => window.location.replace("../login/index.html"), 1200);
+        return;
+    }
+
+    if (!window.MercadoPago) {
+        mostrarMensagem("Não foi possível carregar o Mercado Pago. Verifique sua conexão e tente novamente.", true);
         return;
     }
 
@@ -38,13 +53,18 @@ document.addEventListener("DOMContentLoaded", async function () {
 
         if (statusInicial?.assinaturaAtiva) {
             mostrarMensagem("Sua assinatura já está ativa.", false);
-            setTimeout(() => window.location.href = "../sistema/index.html", 700);
+            setTimeout(() => window.location.replace("../sistema/index.html"), 700);
             return;
         }
 
-        const config = await fetch(GESTOK_PAGAMENTOS_API + "/paymentConfig").then(async resposta => {
+        const config = await fetch(GESTOK_PAGAMENTOS_API + "/paymentConfig", {
+            method: "GET",
+            cache: "no-store"
+        }).then(async resposta => {
             const dados = await resposta.json().catch(() => ({}));
-            if (!resposta.ok || !dados.publicKey) throw new Error("Public Key do Mercado Pago não configurada no servidor.");
+            if (!resposta.ok || !dados.publicKey) {
+                throw new Error("Public Key do Mercado Pago não configurada no servidor.");
+            }
             return dados;
         });
 
@@ -128,7 +148,7 @@ document.addEventListener("DOMContentLoaded", async function () {
         });
     } catch (erro) {
         console.error("Erro ao iniciar pagamento:", erro);
-        mostrarMensagem("Não foi possível iniciar o pagamento. Confira a configuração do Mercado Pago.", true);
+        mostrarMensagem(erro.message || "Não foi possível iniciar o pagamento. Confira a configuração do Mercado Pago.", true);
     }
 
     async function aguardarLiberacao(usuarioFirebase, lojaId) {
@@ -149,7 +169,7 @@ document.addEventListener("DOMContentLoaded", async function () {
                 if (resultado?.assinaturaAtiva) {
                     mostrarMensagem("Pagamento confirmado! Seu Gestok foi liberado.", false);
                     if (statusBox) statusBox.hidden = true;
-                    setTimeout(() => window.location.href = "../sistema/index.html", 700);
+                    setTimeout(() => window.location.replace("../sistema/index.html"), 700);
                     return;
                 }
 
@@ -183,6 +203,47 @@ document.addEventListener("DOMContentLoaded", async function () {
         }
 
         return dados;
+    }
+
+    function aguardarUsuarioFirebase() {
+        return new Promise(resolve => {
+            let finalizado = false;
+            let unsubscribe = null;
+
+            const concluir = usuario => {
+                if (finalizado) return;
+                finalizado = true;
+                if (typeof unsubscribe === "function") unsubscribe();
+                resolve(usuario || null);
+            };
+
+            try {
+                if (!firebase?.auth) {
+                    concluir(null);
+                    return;
+                }
+
+                /* Se já estiver disponível, não precisamos esperar. */
+                const atual = firebase.auth().currentUser;
+                if (atual) {
+                    concluir(atual);
+                    return;
+                }
+
+                /* Caso contrário, espera o Firebase restaurar a sessão. */
+                unsubscribe = firebase.auth().onAuthStateChanged(usuario => {
+                    if (usuario) {
+                        concluir(usuario);
+                    }
+                });
+
+                /* Proteção contra sessão realmente inexistente. */
+                setTimeout(() => concluir(firebase.auth().currentUser), 8000);
+            } catch (erro) {
+                console.error("Erro ao aguardar autenticação Firebase:", erro);
+                concluir(null);
+            }
+        });
     }
 
     function mostrarPix(resultado) {
