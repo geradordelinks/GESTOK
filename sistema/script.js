@@ -39,41 +39,39 @@ document.querySelectorAll(".nav-item");
 
 /* =========================================
 NÚMERO DE MOVIMENTAÇÕES
+-----------------------------------------
+Firestore + loja atual
 ========================================= */
 
-function atualizarNumeroMovimentacoes() {
+let quantidadeMovimentacoesDashboard = 0;
 
-const elemento =
-    document.getElementById(
-        "totalMovimentacoes"
-    );
 
-if (!elemento) {
-    return;
-}
+function atualizarNumeroMovimentacoes(
+    total = null
+) {
 
-let movimentacoes = [];
+    const elemento =
+        document.getElementById(
+            "totalMovimentacoes"
+        );
 
-try {
+    if (!elemento) {
+        return;
+    }
 
-    movimentacoes =
-        JSON.parse(
-            localStorage.getItem(
-                "gestok_movimentacoes"
-            )
-        ) || [];
 
-} catch (erro) {
+    if (total !== null) {
 
-    movimentacoes = [];
+        quantidadeMovimentacoesDashboard =
+            Number(total) || 0;
 
-}
+    }
 
-elemento.textContent =
-    movimentacoes.length;
+
+    elemento.textContent =
+        quantidadeMovimentacoesDashboard;
 
 }
-
 /* =========================================
 MENU
 ========================================= */
@@ -299,276 +297,523 @@ button.addEventListener(
 });
 
 /* =========================================
-MOVIMENTAÇÕES DO DASHBOARD
+   MOVIMENTAÇÕES DO DASHBOARD
+   -----------------------------------------
+   Firestore + isolamento por loja.
 ========================================= */
 
-const CHAVE_MOVIMENTACOES =
-"gestok_movimentacoes";
+let cancelarMovimentacoesDashboard = null;
 
-function obterMovimentacoesDashboard() {
 
-try {
+/* =========================================
+   DATA DA MOVIMENTAÇÃO
+========================================= */
 
-    const dados =
-        JSON.parse(
-            localStorage.getItem(
-                CHAVE_MOVIMENTACOES
-            ) || "[]"
-        );
+function obterDataMovimentacaoDashboard(
+    data
+) {
 
-    return Array.isArray(dados)
-        ? dados
-        : [];
+    if (!data) {
+        return null;
+    }
 
-} catch (erro) {
 
-    console.error(
-        "Erro ao carregar movimentações:",
-        erro
-    );
+    if (
+        typeof data.toDate === "function"
+    ) {
 
-    return [];
+        const dataTimestamp =
+            data.toDate();
+
+        return Number.isNaN(
+            dataTimestamp.getTime()
+        )
+            ? null
+            : dataTimestamp;
+
+    }
+
+
+    const dataConvertida =
+        new Date(data);
+
+
+    return Number.isNaN(
+        dataConvertida.getTime()
+    )
+        ? null
+        : dataConvertida;
 
 }
 
-}
+
+/* =========================================
+   FORMATAR DATA
+========================================= */
 
 function formatarDataMovimentacao(
-data
+    data
 ) {
 
-const d =
-    new Date(data);
-
-if (
-    Number.isNaN(
-        d.getTime()
-    )
-) {
-
-    return "";
-
-}
-
-return new Intl.DateTimeFormat(
-    "pt-BR",
-    {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit"
-    }
-).format(d);
-
-}
-
-function atualizarMovimentacoesDashboard() {
-
-const painel =
-    document.querySelector(
-        ".movements-panel"
-    );
-
-if (!painel) {
-    return;
-}
-
-
-const vazio =
-    painel.querySelector(
-        ".empty-state"
-    );
-
-
-let movimentos =
-    obterMovimentacoesDashboard()
-        .filter(
-            item =>
-                item &&
-                item.data
-        )
-        .sort(
-            (a, b) =>
-                new Date(b.data) -
-                new Date(a.data)
+    const d =
+        obterDataMovimentacaoDashboard(
+            data
         );
 
 
-const recentes =
-    movimentos.slice(0, 5);
+    if (!d) {
+        return "";
+    }
 
 
-let lista =
-    painel.querySelector(
-        ".dashboard-movements-list"
-    );
+    return new Intl.DateTimeFormat(
+        "pt-BR",
+        {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit"
+        }
+    ).format(d);
+
+}
 
 
-if (!recentes.length) {
+/* =========================================
+   RENDERIZAR ÚLTIMAS MOVIMENTAÇÕES
+========================================= */
 
-    if (lista) {
+function renderizarUltimasMovimentacoesDashboard(
+    movimentos
+) {
 
-        lista.remove();
+    const painel =
+        document.querySelector(
+            ".movements-panel"
+        );
+
+
+    if (!painel) {
+        return;
+    }
+
+
+    const vazio =
+        painel.querySelector(
+            ".empty-state"
+        );
+
+
+    const recentes =
+        movimentos
+            .filter(
+                function (item) {
+
+                    return Boolean(
+                        obterDataMovimentacaoDashboard(
+                            item?.data
+                        )
+                    );
+
+                }
+            )
+            .sort(
+                function (a, b) {
+
+                    return (
+                        obterDataMovimentacaoDashboard(
+                            b?.data
+                        )?.getTime() || 0
+                    ) - (
+                        obterDataMovimentacaoDashboard(
+                            a?.data
+                        )?.getTime() || 0
+                    );
+
+                }
+            )
+            .slice(0, 5);
+
+
+    let lista =
+        painel.querySelector(
+            ".dashboard-movements-list"
+        );
+
+
+    /* =====================================
+       NENHUMA MOVIMENTAÇÃO
+    ===================================== */
+
+    if (!recentes.length) {
+
+        if (lista) {
+
+            lista.remove();
+
+        }
+
+
+        if (vazio) {
+
+            vazio.style.display =
+                "flex";
+
+
+            vazio.innerHTML = `
+
+                <div class="empty-icon">
+                    ↔
+                </div>
+
+                <strong>
+                    Nenhuma movimentação
+                </strong>
+
+                <span>
+                    As entradas e saídas aparecerão aqui.
+                </span>
+
+            `;
+
+        }
+
+
+        return;
 
     }
+
+
+    /* =====================================
+       ESCONDER EMPTY
+    ===================================== */
 
     if (vazio) {
 
         vazio.style.display =
-            "flex";
-
-        vazio.innerHTML = `
-
-            <div class="empty-icon">
-                ↔
-            </div>
-
-            <strong>
-                Nenhuma movimentação
-            </strong>
-
-            <span>
-                As entradas e saídas aparecerão aqui.
-            </span>
-
-        `;
+            "none";
 
     }
 
-    return;
 
-}
+    /* =====================================
+       CRIAR LISTA
+    ===================================== */
+
+    if (!lista) {
+
+        lista =
+            document.createElement(
+                "div"
+            );
 
 
-if (vazio) {
-
-    vazio.style.display =
-        "none";
-
-}
+        lista.className =
+            "dashboard-movements-list";
 
 
-if (!lista) {
-
-    lista =
-        document.createElement(
-            "div"
+        painel.appendChild(
+            lista
         );
 
-    lista.className =
-        "dashboard-movements-list";
+    }
 
-    painel.appendChild(
-        lista
-    );
+
+    /* =====================================
+       CARDS
+    ===================================== */
+
+    lista.innerHTML =
+        recentes
+            .map(
+                function (item) {
+
+                    const entrada =
+                        String(
+                            item.tipo || ""
+                        )
+                        .toLowerCase()
+                        .includes(
+                            "entrada"
+                        );
+
+
+                    const sinal =
+                        entrada
+                            ? "+"
+                            : "−";
+
+
+                    const classe =
+                        entrada
+                            ? "movement-entry"
+                            : "movement-exit";
+
+
+                    const icone =
+                        entrada
+                            ? "↓"
+                            : "↑";
+
+
+                    const quantidade =
+                        Number(
+                            item.quantidade ||
+                            0
+                        );
+
+
+                    const anterior =
+                        item.estoqueAnterior ??
+                        item.estoqueAntes ??
+                        0;
+
+
+                    const novo =
+                        item.estoqueNovo ??
+                        item.estoqueDepois ??
+                        0;
+
+
+                    return `
+
+                        <div
+                            class="dashboard-movement ${classe}"
+                        >
+
+                            <div class="movement-main">
+
+                                <div class="movement-icon">
+                                    ${icone}
+                                </div>
+
+
+                                <div class="movement-info">
+
+                                    <strong>
+                                        ${escaparHtmlDashboard(
+                                            item.produto ||
+                                            "Produto"
+                                        )}
+                                    </strong>
+
+
+                                    <span>
+
+                                        ${escaparHtmlDashboard(
+                                            item.tipo ||
+                                            (
+                                                entrada
+                                                    ? "Entrada"
+                                                    : "Saída"
+                                            )
+                                        )}
+
+                                        •
+
+                                        ${formatarDataMovimentacao(
+                                            item.data
+                                        )}
+
+                                    </span>
+
+                                </div>
+
+                            </div>
+
+
+                            <div class="movement-values">
+
+                                <strong>
+
+                                    ${sinal}${quantidade}
+
+                                    ${escaparHtmlDashboard(
+                                        item.unidade ||
+                                        "UN"
+                                    )}
+
+                                </strong>
+
+
+                                <span>
+                                    ${anterior} → ${novo}
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                    `;
+
+                }
+            )
+            .join("");
 
 }
 
 
-lista.innerHTML =
-    recentes
-        .map(function (item) {
+/* =========================================
+   MONITORAR FIRESTORE
+========================================= */
 
-            const entrada =
-                String(
-                    item.tipo || ""
-                )
-                .toLowerCase()
-                .includes(
-                    "entrada"
-                );
+async function iniciarMonitoramentoMovimentacoesDashboard() {
 
+    /* =====================================
+       CANCELAR LISTENER ANTERIOR
+    ===================================== */
 
-            const sinal =
-                entrada
-                    ? "+"
-                    : "−";
+    if (
+        cancelarMovimentacoesDashboard
+    ) {
 
+        cancelarMovimentacoesDashboard();
 
-            const classe =
-                entrada
-                    ? "movement-entry"
-                    : "movement-exit";
+        cancelarMovimentacoesDashboard =
+            null;
+
+    }
 
 
-            const icone =
-                entrada
-                    ? "↓"
-                    : "↑";
+    /* =====================================
+       OBTER LOJA ATUAL
+    ===================================== */
+
+    const lojaId =
+        obterLojaDashboardGestok();
 
 
-            const quantidade =
-                Number(
-                    item.quantidade || 0
-                );
+    if (!lojaId) {
+
+        quantidadeMovimentacoesDashboard =
+            0;
 
 
-            const anterior =
-                item.estoqueAnterior ??
-                item.estoqueAntes ??
-                0;
+        atualizarNumeroMovimentacoes();
 
 
-            const novo =
-                item.estoqueNovo ??
-                item.estoqueDepois ??
-                0;
+        renderizarUltimasMovimentacoesDashboard(
+            []
+        );
 
 
-            return `
+        return;
 
-                <div class="dashboard-movement ${classe}">
-
-                    <div class="movement-main">
-
-                        <div class="movement-icon">
-                            ${icone}
-                        </div>
-
-                        <div class="movement-info">
-
-                            <strong>
-                                ${item.produto || "Produto"}
-                            </strong>
-
-                            <span>
-                                ${
-                                    item.tipo ||
-                                    (
-                                        entrada
-                                            ? "Entrada"
-                                            : "Saída"
-                                    )
-                                }
-                                •
-                                ${formatarDataMovimentacao(item.data)}
-                            </span>
-
-                        </div>
-
-                    </div>
+    }
 
 
-                    <div class="movement-values">
+    /* =====================================
+       REFERÊNCIA FIRESTORE
+    ===================================== */
 
-                        <strong>
-                            ${sinal}${quantidade}
-                            ${item.unidade || "UN"}
-                        </strong>
+    if (
+        typeof referenciaMovimentacoes !==
+        "function"
+    ) {
 
-                        <span>
-                            ${anterior} → ${novo}
-                        </span>
+        console.error(
+            "referenciaMovimentacoes não está disponível."
+        );
 
-                    </div>
+        return;
 
-                </div>
+    }
 
-            `;
 
-        })
-        .join("");
+    try {
+
+        const referencia =
+            referenciaMovimentacoes(
+                lojaId
+            );
+
+
+        cancelarMovimentacoesDashboard =
+            referencia.onSnapshot(
+                function (snapshot) {
+
+                    const movimentos =
+                        snapshot.docs.map(
+                            function (doc) {
+
+                                return {
+
+                                    id:
+                                        doc.id,
+
+                                    ...doc.data()
+
+                                };
+
+                            }
+                        );
+
+
+                    quantidadeMovimentacoesDashboard =
+                        movimentos.length;
+
+
+                    atualizarNumeroMovimentacoes();
+
+
+                    renderizarUltimasMovimentacoesDashboard(
+                        movimentos
+                    );
+
+
+                    console.log(
+                        "Movimentações atualizadas:",
+                        movimentos.length,
+                        "loja:",
+                        lojaId
+                    );
+
+                },
+
+
+                function (erro) {
+
+                    console.error(
+                        "Erro ao monitorar movimentações:",
+                        erro
+                    );
+
+
+                    quantidadeMovimentacoesDashboard =
+                        0;
+
+
+                    atualizarNumeroMovimentacoes();
+
+
+                    renderizarUltimasMovimentacoesDashboard(
+                        []
+                    );
+
+                }
+            );
+
+    } catch (erro) {
+
+        console.error(
+            "Erro ao iniciar movimentações:",
+            erro
+        );
+
+
+        quantidadeMovimentacoesDashboard =
+            0;
+
+
+        atualizarNumeroMovimentacoes();
+
+
+        renderizarUltimasMovimentacoesDashboard(
+            []
+        );
+
+    }
 
 }
 const notificationButton =
@@ -2386,7 +2631,7 @@ function () {
 
         iniciarMonitoramentoProdutosDashboard();
 
-        atualizarMovimentacoesDashboard();
+       iniciarMonitoramentoMovimentacoesDashboard();
 
         atualizarNumeroMovimentacoes();
 
@@ -2423,7 +2668,7 @@ atualizarData();
 iniciarMonitoramentoProdutosDashboard();
 
 
-atualizarMovimentacoesDashboard();
+iniciarMonitoramentoMovimentacoesDashboard();
 
 
 atualizarNumeroMovimentacoes();
@@ -2504,7 +2749,7 @@ function () {
 
     iniciarMonitoramentoProdutosDashboard();
 
-    atualizarMovimentacoesDashboard();
+    iniciarMonitoramentoMovimentacoesDashboard();
 
     atualizarNumeroMovimentacoes();
 
