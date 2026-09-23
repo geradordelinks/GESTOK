@@ -625,26 +625,6 @@ function pagamentoAprovadoGestok(
         conta.assinatura;
 
 
-    /* =====================================
-       TESTE GRATUITO DE 30 DIAS
-    ===================================== */
-
-    if (
-        assinatura.status ===
-            "teste_gratis" &&
-        assinatura.pagamento ===
-            "gratis"
-    ) {
-
-        return true;
-
-    }
-
-
-    /* =====================================
-       ASSINATURA PAGA
-    ===================================== */
-
     return (
         assinatura.status ===
             "ativa" &&
@@ -654,7 +634,6 @@ function pagamentoAprovadoGestok(
     );
 
 }
-
 
 /* =========================================
    ASSINATURA ATIVA
@@ -889,15 +868,6 @@ async function criarContaGestok(
         const agora =
             firebase.firestore.FieldValue
                 .serverTimestamp();
-        const inicioTeste =
-            new Date();
-
-        const vencimentoTeste =
-            new Date(inicioTeste);
-
-        vencimentoTeste.setDate(
-            vencimentoTeste.getDate() + 30
-        );
 
         await lojaRef.set({
 
@@ -928,19 +898,19 @@ async function criarContaGestok(
                     30,
 
                 tipo:
-                    "teste_gratis",
+                    "assinatura",
 
                 inicio:
-                    inicioTeste,
+                    null,
 
                 vencimento:
-                    vencimentoTeste,
+                    null,
 
                 status:
-                    "teste_gratis",
+                    "aguardando_pagamento",
 
                 pagamento:
-                    "gratis"
+                    "pendente"
 
             }
 
@@ -1055,19 +1025,19 @@ async function criarContaGestok(
                     30,
 
                 tipo:
-                    "teste_gratis",
+                    "assinatura",
 
                 inicio:
-                    inicioTeste.toISOString(),
+                    null,
 
                 vencimento:
-                    vencimentoTeste.toISOString(),
+                    null,
 
                 status:
-                    "teste_gratis",
+                    "aguardando_pagamento",
 
                 pagamento:
-                    "gratis"
+                    "pendente"
 
             },
 
@@ -1752,267 +1722,16 @@ async function entrarGestok(
 
 async function aprovarPagamentoGestok() {
 
-    const conta =
-        obterContaGestok();
+    return {
 
+        ok: false,
 
-    const usuarioFirebase =
-        usuarioFirebaseAtualGestok();
+        mensagem:
+            "A aprovação do pagamento é feita exclusivamente pelo Mercado Pago através do servidor."
 
-
-    if (!usuarioFirebase) {
-
-        return {
-
-            ok: false,
-
-            mensagem:
-                "Usuário não autenticado no Firebase."
-
-        };
-
-    }
-
-
-    if (!conta) {
-
-        return {
-
-            ok: false,
-
-            mensagem:
-                "Conta Gestok não encontrada."
-
-        };
-
-    }
-
-
-    if (!conta.lojaId) {
-
-        return {
-
-            ok: false,
-
-            mensagem:
-                "Loja não identificada."
-
-        };
-
-    }
-
-
-    try {
-
-        const db =
-            firebase.firestore();
-
-
-        const agora =
-            new Date();
-
-
-        const vencimento =
-            new Date(
-                agora
-            );
-
-
-        vencimento.setDate(
-            vencimento.getDate() + 30
-        );
-
-
-        const assinatura = {
-
-            plano:
-                "Gestok",
-
-            valor:
-                30,
-
-            dias:
-                30,
-
-            inicio:
-                agora.toISOString(),
-
-            vencimento:
-                vencimento.toISOString(),
-
-            status:
-                "ativa",
-
-            pagamento:
-                "aprovado"
-
-        };
-
-
-        /* =====================================
-           ATUALIZAR FIRESTORE
-        ===================================== */
-
-        await db
-            .collection("lojas")
-            .doc(
-                conta.lojaId
-            )
-            .update({
-
-                assinatura:
-                    assinatura
-
-            });
-
-
-        /* =====================================
-           ATUALIZAR ESPELHO LOCAL
-        ===================================== */
-
-        conta.assinatura =
-            assinatura;
-
-
-        localStorage.setItem(
-
-            GESTOK_CONTA,
-
-            JSON.stringify(conta)
-
-        );
-
-
-        return {
-
-            ok: true,
-
-            conta:
-                conta
-
-        };
-
-
-    } catch (erro) {
-
-        console.error(
-            "Erro ao aprovar pagamento:",
-            erro
-        );
-
-
-        return {
-
-            ok: false,
-
-            mensagem:
-                mensagemErroFirebaseGestok(
-                    erro
-                ),
-
-            erro:
-                erro
-
-        };
-
-    }
+    };
 
 }
-
-
-/* =========================================
-   EXIGIR LOGIN
-   -----------------------------------------
-   IMPORTANTE:
-   FIREBASE AUTH É A AUTORIDADE.
-========================================= */
-
-function exigirLoginGestok() {
-
-    const usuario =
-        usuarioFirebaseAtualGestok();
-
-
-    const pagina =
-        window.location.pathname
-            .toLowerCase();
-
-
-    const paginasPublicas = [
-
-        "/login/index.html",
-
-        "/cadastro/index.html",
-
-        "/planos/index.html",
-
-        "/apresentacao.html",
-
-        "/index.html"
-
-    ];
-
-
-    const paginaPublica =
-        paginasPublicas.some(
-
-            function (item) {
-
-                return pagina.endsWith(item);
-
-            }
-
-        );
-
-
-    if (paginaPublica) {
-
-        return true;
-
-    }
-
-
-    /* -----------------------------------------
-       SEM FIREBASE AUTH
-    ----------------------------------------- */
-
-    if (!usuario) {
-
-        window.location.replace(
-            caminhoLoginGestok()
-        );
-
-        return false;
-
-    }
-
-
-    return true;
-
-}
-
-
-/* =========================================
-   CAMINHO DO SISTEMA
-========================================= */
-
-function caminhoSistemaGestok() {
-
-    return "../sistema/index.html";
-
-}
-
-
-/* =========================================
-   CAMINHO DO LOGIN
-========================================= */
-
-function caminhoLoginGestok() {
-
-    return "../login/index.html";
-
-}
-
 
 /* =========================================
    CAMINHO DO PAGAMENTO

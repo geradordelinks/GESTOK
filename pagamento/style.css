@@ -462,3 +462,59 @@ body {
     }
 
 }
+
+#paymentBrick_container {
+    margin-top: 12px;
+}
+
+.payment-status {
+    margin-top: 14px;
+    padding: 14px;
+    border-radius: 12px;
+    background: #f5f7ff;
+    border: 1px solid #dbe4ff;
+    display: grid;
+    gap: 5px;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.payment-status strong { color: #1d4ed8; }
+.payment-status span { color: #667085; }
+
+.pix-real-area {
+    margin-top: 14px;
+    padding: 18px;
+    border: 1px solid #dbe4ef;
+    border-radius: 14px;
+    background: #fbfdff;
+    display: grid;
+    gap: 10px;
+    text-align: center;
+}
+
+.pix-qr {
+    width: 220px;
+    max-width: 100%;
+    margin: 0 auto;
+}
+
+.pix-copy {
+    width: 100%;
+    min-height: 88px;
+    resize: none;
+    padding: 10px;
+    border: 1px solid #d7dee8;
+    border-radius: 9px;
+    font-size: 11px;
+}
+
+.pix-copy-button {
+    border: 0;
+    border-radius: 9px;
+    padding: 12px;
+    background: #17202a;
+    color: white;
+    font-weight: 700;
+    cursor: pointer;
+}
