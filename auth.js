@@ -625,6 +625,26 @@ function pagamentoAprovadoGestok(
         conta.assinatura;
 
 
+    /* =====================================
+       TESTE GRATUITO DE 30 DIAS
+    ===================================== */
+
+    if (
+        assinatura.status ===
+            "teste_gratis" &&
+        assinatura.pagamento ===
+            "gratis"
+    ) {
+
+        return true;
+
+    }
+
+
+    /* =====================================
+       ASSINATURA PAGA
+    ===================================== */
+
     return (
         assinatura.status ===
             "ativa" &&
@@ -635,71 +655,45 @@ function pagamentoAprovadoGestok(
 
 }
 
+
 /* =========================================
    ASSINATURA ATIVA
 ========================================= */
-
-function dataGestokEmMilissegundos(valor) {
-
-    if (!valor) return NaN;
-
-    // Firestore Timestamp
-    if (typeof valor.toDate === "function") {
-        const data = valor.toDate();
-        return data instanceof Date ? data.getTime() : NaN;
-    }
-
-    if (typeof valor === "object" && valor.seconds !== undefined) {
-        const segundos = Number(valor.seconds);
-        const nanos = Number(valor.nanoseconds || 0);
-        if (Number.isFinite(segundos)) {
-            return (segundos * 1000) + Math.floor(nanos / 1000000);
-        }
-    }
-
-    const data = new Date(valor);
-    return data.getTime();
-}
 
 function assinaturaAtivaGestok(
     conta = obterContaGestok()
 ) {
 
-    if (!conta || !conta.assinatura) {
+    if (
+        !pagamentoAprovadoGestok(conta)
+    ) {
+
         return false;
+
     }
 
-    const assinatura = conta.assinatura;
 
     if (
-        assinatura.status !== "ativa" ||
-        assinatura.pagamento !== "aprovado"
+        !conta.assinatura.vencimento
     ) {
+
         return false;
+
     }
 
-    let vencimento =
-        dataGestokEmMilissegundos(assinatura.vencimento);
 
-    // Compatibilidade com contas antigas que possuem apenas a data de início.
-    // Nunca cria uma assinatura nova: somente calcula o vencimento que já
-    // deveria existir para uma assinatura paga de 30 dias.
-    if (
-        !Number.isFinite(vencimento) &&
-        assinatura.inicio
-    ) {
-        const inicio =
-            dataGestokEmMilissegundos(assinatura.inicio);
+    const vencimento =
+        new Date(
+            conta.assinatura.vencimento
+        ).getTime();
 
-        if (Number.isFinite(inicio)) {
-            const dias = Number(assinatura.dias || 30);
-            vencimento = inicio + (dias * 24 * 60 * 60 * 1000);
-        }
-    }
 
     return (
+
         Number.isFinite(vencimento) &&
+
         vencimento > Date.now()
+
     );
 
 }
@@ -895,6 +889,15 @@ async function criarContaGestok(
         const agora =
             firebase.firestore.FieldValue
                 .serverTimestamp();
+        const inicioTeste =
+            new Date();
+
+        const vencimentoTeste =
+            new Date(inicioTeste);
+
+        vencimentoTeste.setDate(
+            vencimentoTeste.getDate() + 30
+        );
 
         await lojaRef.set({
 
@@ -925,19 +928,19 @@ async function criarContaGestok(
                     30,
 
                 tipo:
-                    "assinatura",
+                    "teste_gratis",
 
                 inicio:
-                    null,
+                    inicioTeste,
 
                 vencimento:
-                    null,
+                    vencimentoTeste,
 
                 status:
-                    "aguardando_pagamento",
+                    "teste_gratis",
 
                 pagamento:
-                    "pendente"
+                    "gratis"
 
             }
 
@@ -1052,19 +1055,19 @@ async function criarContaGestok(
                     30,
 
                 tipo:
-                    "assinatura",
+                    "teste_gratis",
 
                 inicio:
-                    null,
+                    inicioTeste.toISOString(),
 
                 vencimento:
-                    null,
+                    vencimentoTeste.toISOString(),
 
                 status:
-                    "aguardando_pagamento",
+                    "teste_gratis",
 
                 pagamento:
-                    "pendente"
+                    "gratis"
 
             },
 
@@ -1749,16 +1752,267 @@ async function entrarGestok(
 
 async function aprovarPagamentoGestok() {
 
-    return {
+    const conta =
+        obterContaGestok();
 
-        ok: false,
 
-        mensagem:
-            "A aprovação do pagamento é feita exclusivamente pelo Mercado Pago através do servidor."
+    const usuarioFirebase =
+        usuarioFirebaseAtualGestok();
 
-    };
+
+    if (!usuarioFirebase) {
+
+        return {
+
+            ok: false,
+
+            mensagem:
+                "Usuário não autenticado no Firebase."
+
+        };
+
+    }
+
+
+    if (!conta) {
+
+        return {
+
+            ok: false,
+
+            mensagem:
+                "Conta Gestok não encontrada."
+
+        };
+
+    }
+
+
+    if (!conta.lojaId) {
+
+        return {
+
+            ok: false,
+
+            mensagem:
+                "Loja não identificada."
+
+        };
+
+    }
+
+
+    try {
+
+        const db =
+            firebase.firestore();
+
+
+        const agora =
+            new Date();
+
+
+        const vencimento =
+            new Date(
+                agora
+            );
+
+
+        vencimento.setDate(
+            vencimento.getDate() + 30
+        );
+
+
+        const assinatura = {
+
+            plano:
+                "Gestok",
+
+            valor:
+                30,
+
+            dias:
+                30,
+
+            inicio:
+                agora.toISOString(),
+
+            vencimento:
+                vencimento.toISOString(),
+
+            status:
+                "ativa",
+
+            pagamento:
+                "aprovado"
+
+        };
+
+
+        /* =====================================
+           ATUALIZAR FIRESTORE
+        ===================================== */
+
+        await db
+            .collection("lojas")
+            .doc(
+                conta.lojaId
+            )
+            .update({
+
+                assinatura:
+                    assinatura
+
+            });
+
+
+        /* =====================================
+           ATUALIZAR ESPELHO LOCAL
+        ===================================== */
+
+        conta.assinatura =
+            assinatura;
+
+
+        localStorage.setItem(
+
+            GESTOK_CONTA,
+
+            JSON.stringify(conta)
+
+        );
+
+
+        return {
+
+            ok: true,
+
+            conta:
+                conta
+
+        };
+
+
+    } catch (erro) {
+
+        console.error(
+            "Erro ao aprovar pagamento:",
+            erro
+        );
+
+
+        return {
+
+            ok: false,
+
+            mensagem:
+                mensagemErroFirebaseGestok(
+                    erro
+                ),
+
+            erro:
+                erro
+
+        };
+
+    }
 
 }
+
+
+/* =========================================
+   EXIGIR LOGIN
+   -----------------------------------------
+   IMPORTANTE:
+   FIREBASE AUTH É A AUTORIDADE.
+========================================= */
+
+function exigirLoginGestok() {
+
+    const usuario =
+        usuarioFirebaseAtualGestok();
+
+
+    const pagina =
+        window.location.pathname
+            .toLowerCase();
+
+
+    const paginasPublicas = [
+
+        "/login/index.html",
+
+        "/cadastro/index.html",
+
+        "/planos/index.html",
+
+        "/apresentacao.html",
+
+        "/index.html"
+
+    ];
+
+
+    const paginaPublica =
+        paginasPublicas.some(
+
+            function (item) {
+
+                return pagina.endsWith(item);
+
+            }
+
+        );
+
+
+    if (paginaPublica) {
+
+        return true;
+
+    }
+
+
+    /* -----------------------------------------
+       SEM FIREBASE AUTH
+    ----------------------------------------- */
+
+    if (!usuario) {
+
+        window.location.replace(
+            caminhoLoginGestok()
+        );
+
+        return false;
+
+    }
+
+
+    return true;
+
+}
+
+
+/* =========================================
+   CAMINHO DO SISTEMA
+========================================= */
+
+function caminhoSistemaGestok() {
+
+    return "../sistema/index.html";
+
+}
+
+
+/* =========================================
+   CAMINHO DO LOGIN
+========================================= */
+
+function caminhoLoginGestok() {
+
+    return "../login/index.html";
+
+}
+
 
 /* =========================================
    CAMINHO DO PAGAMENTO
@@ -1858,9 +2112,9 @@ function diasRestantesGestok(
 
 
     const vencimento =
-        dataGestokEmMilissegundos(
+        new Date(
             conta.assinatura.vencimento
-        );
+        ).getTime();
 
 
     if (
