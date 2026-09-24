@@ -1,123 +1,104 @@
-# Gestok — Pagamento real com Pix e cartão
+# Gestok — configuração do pagamento
 
-A tela de pagamento foi preparada para usar **Mercado Pago + Firebase Cloud Functions + Firestore**.
+Este projeto separa o frontend (GitHub Pages) do backend (Firebase Cloud Functions).
 
-O fluxo é:
+## 1. Projeto Firebase
 
-1. Cliente cria a conta.
-2. A conta fica com `aguardando_pagamento`.
-3. O cliente abre o pagamento.
-4. O Payment Brick oferece Pix e cartão.
-5. O frontend envia apenas os dados necessários ao backend.
-6. O backend cria o pagamento no Mercado Pago.
-7. O Mercado Pago envia Webhook quando o pagamento muda de status.
-8. O backend valida a assinatura do Webhook e consulta o pagamento no Mercado Pago.
-9. Somente quando o status for `approved`, o backend grava `assinatura.status = ativa` e `pagamento = aprovado`.
-10. O login libera o sistema somente com assinatura aprovada e dentro da validade.
+O projeto configurado é:
 
-## 1. Pré-requisitos
+`gestok-3bce2`
 
-- Conta de vendedor no Mercado Pago.
-- Aplicação criada em **Suas integrações** no Mercado Pago.
-- Firebase CLI instalado e login feito.
-- Projeto Firebase `gestok-3bce2` selecionado.
-- Projeto Firebase no plano Blaze para Cloud Functions.
+Região das funções:
 
-O Firebase exige Cloud Functions para colocar o Access Token fora do navegador; credenciais privadas devem ficar no Secret Manager. `functions.config()` não deve ser usado em uma implementação nova. Consulte a documentação oficial do Firebase sobre parâmetros e secrets.
+`southamerica-east1`
 
-## 2. Instalar dependências
+## 2. Instalar e publicar
 
-No terminal, dentro da pasta `ESTOQUE`:
+Na pasta raiz do projeto:
 
 ```bash
+firebase login
+firebase use gestok-3bce2
 cd functions
 npm install
 cd ..
+firebase deploy --only functions --project gestok-3bce2
 ```
 
-## 3. Configurar as credenciais
+Durante o deploy, o Firebase poderá pedir o valor de `MP_PUBLIC_KEY`.
+Use a **Public Key** da aplicação Mercado Pago.
 
-No terminal, dentro de `ESTOQUE`:
+## 3. Configurar credenciais privadas
+
+Não coloque o Access Token no HTML ou JavaScript do site.
+
+Configure no Firebase:
 
 ```bash
-firebase functions:secrets:set MP_ACCESS_TOKEN
+firebase functions:secrets:set MP_ACCESS_TOKEN --project gestok-3bce2
+firebase functions:secrets:set MP_WEBHOOK_SECRET --project gestok-3bce2
 ```
 
-Cole o **Access Token de produção** do Mercado Pago quando o terminal pedir.
-
-Depois:
+Depois publique novamente:
 
 ```bash
-firebase functions:secrets:set MP_WEBHOOK_SECRET
+firebase deploy --only functions --project gestok-3bce2
 ```
 
-Cole a chave secreta gerada pelo Mercado Pago em **Webhooks > Configurar notificações**.
+## 4. Testar se o backend está online
 
-Para a Public Key:
+Depois do deploy, abra no navegador:
 
-```bash
-firebase deploy --only functions:paymentConfig
+`https://southamerica-east1-gestok-3bce2.cloudfunctions.net/paymentHealth`
+
+O retorno esperado é um JSON contendo:
+
+```json
+{
+  "ok": true,
+  "service": "Gestok Payments"
+}
 ```
 
-Durante a configuração/deploy, informe a **Public Key** da aplicação do Mercado Pago quando o Firebase solicitar `MP_PUBLIC_KEY`.
+Também é possível testar:
 
-> Nunca coloque Access Token ou Webhook Secret em HTML, JavaScript do navegador, Git ou `pagamento/config.js`.
+`https://southamerica-east1-gestok-3bce2.cloudfunctions.net/paymentConfig`
 
-## 4. Deploy das funções
+O retorno esperado é:
 
-```bash
-firebase deploy --only functions
+```json
+{
+  "ok": true,
+  "publicKey": "SUA_PUBLIC_KEY"
+}
 ```
 
-As funções usadas pelo Gestok são:
+## 5. Webhook do Mercado Pago
 
-- `paymentConfig`
-- `createPayment`
-- `paymentStatus`
-- `mercadoPagoWebhook`
+Configure o webhook de pagamentos para:
 
-A URL esperada para o webhook é:
+`https://southamerica-east1-gestok-3bce2.cloudfunctions.net/mercadoPagoWebhook`
 
-```text
-https://southamerica-east1-gestok-3bce2.cloudfunctions.net/mercadoPagoWebhook
-```
+O backend valida a assinatura do webhook e consulta o pagamento diretamente na API do Mercado Pago antes de liberar a assinatura.
 
-## 5. Configurar Webhook no Mercado Pago
+## 6. Fluxo
 
-No painel da aplicação do Mercado Pago:
+1. Usuário entra no Gestok.
+2. Frontend obtém o token do Firebase Auth.
+3. Frontend chama `createPayment`.
+4. Backend valida o usuário e a loja.
+5. Backend cria o pagamento no Mercado Pago.
+6. Mercado Pago processa Pix/cartão.
+7. Webhook ou consulta server-side confirma o status.
+8. Somente `approved` libera/renova a assinatura.
+9. O Firestore recebe `status: "ativa"` e `pagamento: "aprovado"`.
+10. O frontend consulta `paymentStatus` e entra no sistema.
 
-**Webhooks → Configurar notificações**
+## 7. Segurança
 
-Cadastre a URL acima e habilite as notificações de pagamento.
+Nunca publique estes valores no GitHub Pages:
 
-A integração valida o `x-signature` antes de aceitar a notificação.
+- `MP_ACCESS_TOKEN`
+- `MP_WEBHOOK_SECRET`
 
-## 6. Publicar o site
-
-O frontend usa:
-
-```text
-https://southamerica-east1-gestok-3bce2.cloudfunctions.net
-```
-
-em `pagamento/config.js`.
-
-Se você mudar a região das Cloud Functions, altere essa URL.
-
-## 7. Teste obrigatório antes de produção
-
-Faça pelo menos estes testes:
-
-- Cartão de teste aprovado.
-- Cartão recusado.
-- Pix criado e pago.
-- Pix criado e não pago.
-- Recarregar a página durante um Pix pendente.
-- Tentar alterar `assinatura` pelo navegador.
-- Tentar acessar o sistema antes da aprovação.
-- Fazer login depois da aprovação.
-- Esperar a assinatura vencer e verificar o bloqueio.
-
-## Importante
-
-O navegador **não aprova pagamentos**. A função antiga `aprovarPagamentoGestok()` foi neutralizada. A aprovação passa a depender do Mercado Pago e do backend.
+A Public Key pode ser entregue ao frontend; o Access Token permanece nas Cloud Functions.

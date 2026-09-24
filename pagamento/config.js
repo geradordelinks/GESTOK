@@ -1,8 +1,8 @@
 // =========================================
-// GESTOK - PAGAMENTO
+// GESTOK - API DE PAGAMENTOS
 // =========================================
-// A URL abaixo aponta para as Cloud Functions do projeto.
-// Access Token, Webhook Secret e Public Key ficam no backend.
+// Backend Firebase Cloud Functions.
+// NÃO coloque Access Token aqui.
 
 const GESTOK_PAGAMENTOS_API =
     "https://southamerica-east1-gestok-3bce2.cloudfunctions.net";

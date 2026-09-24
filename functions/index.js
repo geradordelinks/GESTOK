@@ -2,8 +2,10 @@
    GESTOK - BACKEND DE PAGAMENTOS
    Mercado Pago + Firebase Admin
 
-   NUNCA coloque ACCESS TOKEN ou WEBHOOK SECRET
-   no frontend.
+   SEGURANÇA:
+   - Access Token fica somente no backend.
+   - Webhook Secret fica somente no backend.
+   - O frontend recebe somente a Public Key.
 ========================================= */
 
 const crypto = require("crypto");
@@ -22,18 +24,31 @@ const MP_PUBLIC_KEY = defineString("MP_PUBLIC_KEY", {
 
 const VALOR_PLANO = 30.00;
 const DIAS_PLANO = 30;
+const DOMINIO_GESTOK = "https://geradordelinks.github.io";
 
 function json(res, status, body) {
   return res.status(status).json(body);
 }
 
 function cors(req, res) {
-  const origin = req.headers.origin || "";
-  // Em produção, se desejar, troque por seu domínio exato.
-  const permitido = origin || "*";
-  res.set("Access-Control-Allow-Origin", permitido);
+  const origin = String(req.headers.origin || "");
+  const permitidos = new Set([
+    DOMINIO_GESTOK,
+    "http://localhost:5000",
+    "http://127.0.0.1:5000",
+    "http://localhost:5500",
+    "http://127.0.0.1:5500",
+  ]);
+
+  if (permitidos.has(origin)) {
+    res.set("Access-Control-Allow-Origin", origin);
+  } else if (!origin) {
+    // Navegação direta/teste sem Origin.
+    res.set("Access-Control-Allow-Origin", "*");
+  }
+
   res.set("Vary", "Origin");
-  res.set("Access-Control-Allow-Headers", "Content-Type, Authorization" );
+  res.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
   res.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
 }
 
@@ -67,6 +82,36 @@ function idempotencyKey(value) {
   return crypto.createHash("sha256").update(base).digest("hex");
 }
 
+function dataValida(valor) {
+  if (!valor) return null;
+
+  if (typeof valor.toDate === "function") {
+    const data = valor.toDate();
+    return Number.isNaN(data.getTime()) ? null : data;
+  }
+
+  if (valor instanceof Date) {
+    return Number.isNaN(valor.getTime()) ? null : valor;
+  }
+
+  if (typeof valor === "object" && Number.isFinite(valor.seconds)) {
+    const data = new Date(valor.seconds * 1000);
+    return Number.isNaN(data.getTime()) ? null : data;
+  }
+
+  const data = new Date(valor);
+  return Number.isNaN(data.getTime()) ? null : data;
+}
+
+function assinaturaAtiva(assinatura) {
+  if (!assinatura) return false;
+  if (assinatura.status !== "ativa") return false;
+  if (assinatura.pagamento !== "aprovado") return false;
+
+  const vencimento = dataValida(assinatura.vencimento);
+  return !!vencimento && vencimento.getTime() > Date.now();
+}
+
 async function mpFetch(path, options = {}) {
   const token = MP_ACCESS_TOKEN.value();
   const response = await fetch(`https://api.mercadopago.com${path}`, {
@@ -88,7 +133,9 @@ async function mpFetch(path, options = {}) {
   }
 
   if (!response.ok) {
-    const error = new Error(data.message || data.error || "Mercado Pago recusou a operação.");
+    const error = new Error(
+      data.message || data.error || "Mercado Pago recusou a operação."
+    );
     error.status = response.status;
     error.data = data;
     throw error;
@@ -133,13 +180,19 @@ function assinaturaWebhookValida(req) {
 async function aplicarStatusPagamento(payment) {
   const externalReference = String(payment.external_reference || "");
   const partes = externalReference.split(":");
+
   if (partes.length < 3 || partes[0] !== "gestok") {
     return { ok: false, motivo: "external_reference inválido" };
   }
 
   const lojaId = partes[1];
   const uid = partes[2];
-  const paymentId = String(payment.id);
+  const paymentId = String(payment.id || "");
+
+  if (!paymentId) {
+    return { ok: false, motivo: "payment id ausente" };
+  }
+
   const lojaInfo = await lojaDoUsuario(lojaId, uid);
   if (!lojaInfo) {
     return { ok: false, motivo: "loja/usuário não conferem" };
@@ -165,8 +218,8 @@ async function aplicarStatusPagamento(payment) {
   if (status === "approved") {
     const atual = lojaInfo.loja.assinatura || {};
     const agora = new Date();
-    const vencimentoAtual = atual.vencimento ? new Date(atual.vencimento) : null;
-    const inicio = vencimentoAtual && !Number.isNaN(vencimentoAtual.getTime()) && vencimentoAtual > agora
+    const vencimentoAtual = dataValida(atual.vencimento);
+    const inicio = vencimentoAtual && vencimentoAtual > agora
       ? vencimentoAtual
       : agora;
     const vencimento = new Date(inicio);
@@ -187,43 +240,100 @@ async function aplicarStatusPagamento(payment) {
     };
 
     await lojaInfo.ref.update({ assinatura });
-    await pagamentoRef.set({ status: "approved", statusDetail, confirmadoEm: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+    await pagamentoRef.set({
+      status: "approved",
+      statusDetail,
+      confirmadoEm: admin.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
   }
 
   return { ok: true, status };
 }
 
+/* =========================================
+   TESTE DE SAÚDE
+   Abra esta URL no navegador depois do deploy:
+   /paymentHealth
+========================================= */
+exports.paymentHealth = onRequest(
+  { region: "southamerica-east1" },
+  async (req, res) => {
+    cors(req, res);
+    if (req.method === "OPTIONS") return res.status(204).send("");
+    return json(res, 200, {
+      ok: true,
+      service: "Gestok Payments",
+      region: "southamerica-east1",
+      timestamp: new Date().toISOString(),
+    });
+  }
+);
+
+/* =========================================
+   CONFIGURAÇÃO PÚBLICA
+========================================= */
 exports.paymentConfig = onRequest(
   { region: "southamerica-east1" },
   async (req, res) => {
     cors(req, res);
     if (req.method === "OPTIONS") return res.status(204).send("");
-    return json(res, 200, { publicKey: MP_PUBLIC_KEY.value() });
+    if (req.method !== "GET") {
+      return json(res, 405, { ok: false, mensagem: "Método não permitido." });
+    }
+
+    const publicKey = MP_PUBLIC_KEY.value();
+    if (!publicKey) {
+      return json(res, 500, {
+        ok: false,
+        mensagem: "MP_PUBLIC_KEY não foi configurada no Firebase.",
+      });
+    }
+
+    return json(res, 200, { ok: true, publicKey });
   }
 );
 
+/* =========================================
+   CRIAR PAGAMENTO
+========================================= */
 exports.createPayment = onRequest(
   { region: "southamerica-east1", secrets: [MP_ACCESS_TOKEN] },
   async (req, res) => {
     cors(req, res);
     if (req.method === "OPTIONS") return res.status(204).send("");
-    if (req.method !== "POST") return json(res, 405, { ok: false, mensagem: "Método não permitido." });
+    if (req.method !== "POST") {
+      return json(res, 405, { ok: false, mensagem: "Método não permitido." });
+    }
 
     try {
       const decoded = await usuarioAutenticado(req);
       const { lojaId, payment = {} } = req.body || {};
       const lojaInfo = await lojaDoUsuario(lojaId, decoded.uid);
 
-      if (!lojaInfo) return json(res, 403, { ok: false, mensagem: "Loja não pertence ao usuário autenticado." });
+      if (!lojaInfo) {
+        return json(res, 403, {
+          ok: false,
+          mensagem: "Loja não pertence ao usuário autenticado.",
+        });
+      }
 
       const assinatura = lojaInfo.loja.assinatura || {};
-      if (assinatura.status === "ativa" && assinatura.pagamento === "aprovado" && assinatura.vencimento && new Date(assinatura.vencimento) > new Date()) {
-        return json(res, 200, { ok: true, status: "approved", assinaturaAtiva: true });
+      if (assinaturaAtiva(assinatura)) {
+        return json(res, 200, {
+          ok: true,
+          status: "approved",
+          assinaturaAtiva: true,
+          vencimento: assinatura.vencimento,
+        });
       }
 
       const requestId = String(payment.request_id || crypto.randomUUID());
       const pagamentosRef = lojaInfo.ref.collection("pagamentos");
-      const anteriorSnap = await pagamentosRef.where("requestId", "==", requestId).limit(1).get();
+      const anteriorSnap = await pagamentosRef
+        .where("requestId", "==", requestId)
+        .limit(1)
+        .get();
+
       if (!anteriorSnap.empty) {
         const anterior = anteriorSnap.docs[0].data();
         return json(res, 200, {
@@ -235,11 +345,24 @@ exports.createPayment = onRequest(
         });
       }
 
-      const paymentMethodId = String(payment.payment_method_id || payment.paymentMethodId || "").toLowerCase();
-      if (!paymentMethodId) return json(res, 400, { ok: false, mensagem: "Forma de pagamento não informada." });
+      const paymentMethodId = String(
+        payment.payment_method_id || payment.paymentMethodId || ""
+      ).toLowerCase();
+
+      if (!paymentMethodId) {
+        return json(res, 400, {
+          ok: false,
+          mensagem: "Forma de pagamento não informada.",
+        });
+      }
 
       const email = decoded.email || lojaInfo.loja.email;
-      if (!email) return json(res, 400, { ok: false, mensagem: "E-mail do pagador não encontrado." });
+      if (!email) {
+        return json(res, 400, {
+          ok: false,
+          mensagem: "E-mail do pagador não encontrado.",
+        });
+      }
 
       const body = {
         transaction_amount: VALOR_PLANO,
@@ -251,30 +374,52 @@ exports.createPayment = onRequest(
       if (paymentMethodId === "pix") {
         body.payment_method_id = "pix";
       } else {
-        if (!payment.token) return json(res, 400, { ok: false, mensagem: "Token do cartão não recebido." });
+        if (!payment.token) {
+          return json(res, 400, {
+            ok: false,
+            mensagem: "Token do cartão não recebido.",
+          });
+        }
+
         body.token = String(payment.token);
         body.installments = Number(payment.installments || 1);
         body.payment_method_id = paymentMethodId;
-        if (payment.issuer_id !== undefined && payment.issuer_id !== null && payment.issuer_id !== "") {
+
+        if (
+          payment.issuer_id !== undefined &&
+          payment.issuer_id !== null &&
+          payment.issuer_id !== ""
+        ) {
           body.issuer_id = Number(payment.issuer_id);
         }
-        if (payment.payer?.identification?.type && payment.payer?.identification?.number) {
+
+        if (
+          payment.payer?.identification?.type &&
+          payment.payer?.identification?.number
+        ) {
           body.payer.identification = {
             type: String(payment.payer.identification.type),
             number: String(payment.payer.identification.number),
           };
         }
-        if (payment.payer?.first_name) body.payer.first_name = String(payment.payer.first_name);
+
+        if (payment.payer?.first_name) {
+          body.payer.first_name = String(payment.payer.first_name);
+        }
       }
 
       const mpPayment = await mpFetch("/v1/payments", {
         method: "POST",
-        headers: { "X-Idempotency-Key": idempotencyKey(requestId) },
+        headers: {
+          "X-Idempotency-Key": idempotencyKey(requestId),
+        },
         body: JSON.stringify(body),
       });
 
       const paymentId = String(mpPayment.id);
-      const transactionData = mpPayment.point_of_interaction?.transaction_data || {};
+      const transactionData =
+        mpPayment.point_of_interaction?.transaction_data || {};
+
       const dados = {
         paymentId,
         requestId,
@@ -282,7 +427,9 @@ exports.createPayment = onRequest(
         statusDetail: mpPayment.status_detail || "",
         paymentMethodId: mpPayment.payment_method_id || paymentMethodId,
         paymentTypeId: mpPayment.payment_type_id || null,
-        transactionAmount: Number(mpPayment.transaction_amount || VALOR_PLANO),
+        transactionAmount: Number(
+          mpPayment.transaction_amount || VALOR_PLANO
+        ),
         externalReference: body.external_reference,
         qrCode: transactionData.qr_code || null,
         qrCodeBase64: transactionData.qr_code_base64 || null,
@@ -303,48 +450,91 @@ exports.createPayment = onRequest(
       });
     } catch (error) {
       console.error("createPayment:", error);
-      if (error.message === "AUTH_REQUIRED") return json(res, 401, { ok: false, mensagem: "Sessão inválida. Faça login novamente." });
-      return json(res, 500, { ok: false, mensagem: error.message || "Erro ao criar pagamento." });
+      if (error.message === "AUTH_REQUIRED") {
+        return json(res, 401, {
+          ok: false,
+          mensagem: "Sessão inválida. Faça login novamente.",
+        });
+      }
+
+      return json(res, 500, {
+        ok: false,
+        mensagem: error.message || "Erro ao criar pagamento.",
+      });
     }
   }
 );
 
+/* =========================================
+   CONSULTAR STATUS
+========================================= */
 exports.paymentStatus = onRequest(
   { region: "southamerica-east1", secrets: [MP_ACCESS_TOKEN] },
   async (req, res) => {
     cors(req, res);
     if (req.method === "OPTIONS") return res.status(204).send("");
-    if (req.method !== "POST") return json(res, 405, { ok: false, mensagem: "Método não permitido." });
+    if (req.method !== "POST") {
+      return json(res, 405, { ok: false, mensagem: "Método não permitido." });
+    }
 
     try {
       const decoded = await usuarioAutenticado(req);
       const { lojaId } = req.body || {};
       const lojaInfo = await lojaDoUsuario(lojaId, decoded.uid);
-      if (!lojaInfo) return json(res, 403, { ok: false, mensagem: "Loja não pertence ao usuário autenticado." });
+
+      if (!lojaInfo) {
+        return json(res, 403, {
+          ok: false,
+          mensagem: "Loja não pertence ao usuário autenticado.",
+        });
+      }
 
       const assinatura = lojaInfo.loja.assinatura || {};
-      const assinaturaAtiva = assinatura.status === "ativa" && assinatura.pagamento === "aprovado" && assinatura.vencimento && new Date(assinatura.vencimento) > new Date();
-      if (assinaturaAtiva) return json(res, 200, { ok: true, assinaturaAtiva: true, status: "approved", vencimento: assinatura.vencimento });
+      if (assinaturaAtiva(assinatura)) {
+        return json(res, 200, {
+          ok: true,
+          assinaturaAtiva: true,
+          status: "approved",
+          vencimento: assinatura.vencimento,
+        });
+      }
 
-      const snap = await lojaInfo.ref.collection("pagamentos").orderBy("criadoEm", "desc").limit(1).get();
-      if (snap.empty) return json(res, 200, { ok: true, assinaturaAtiva: false, status: "pending" });
+      const snap = await lojaInfo.ref
+        .collection("pagamentos")
+        .orderBy("criadoEm", "desc")
+        .limit(1)
+        .get();
+
+      if (snap.empty) {
+        return json(res, 200, {
+          ok: true,
+          assinaturaAtiva: false,
+          status: "pending",
+        });
+      }
 
       const pagamento = snap.docs[0].data();
       let status = pagamento.status || "pending";
 
       if (pagamento.paymentId && status !== "approved") {
         try {
-          const atual = await mpFetch(`/v1/payments/${encodeURIComponent(pagamento.paymentId)}`, { method: "GET" });
+          const atual = await mpFetch(
+            `/v1/payments/${encodeURIComponent(pagamento.paymentId)}`,
+            { method: "GET" }
+          );
           await aplicarStatusPagamento(atual);
           status = atual.status || status;
         } catch (error) {
-          console.warn("paymentStatus: não foi possível atualizar no Mercado Pago", error.message);
+          console.warn(
+            "paymentStatus: não foi possível atualizar no Mercado Pago",
+            error.message
+          );
         }
       }
 
       const lojaAtual = (await lojaInfo.ref.get()).data() || {};
       const assinaturaAtual = lojaAtual.assinatura || {};
-      const ativaAgora = assinaturaAtual.status === "ativa" && assinaturaAtual.pagamento === "aprovado" && assinaturaAtual.vencimento && new Date(assinaturaAtual.vencimento) > new Date();
+      const ativaAgora = assinaturaAtiva(assinaturaAtual);
 
       return json(res, 200, {
         ok: true,
@@ -355,17 +545,32 @@ exports.paymentStatus = onRequest(
       });
     } catch (error) {
       console.error("paymentStatus:", error);
-      if (error.message === "AUTH_REQUIRED") return json(res, 401, { ok: false, mensagem: "Sessão inválida." });
-      return json(res, 500, { ok: false, mensagem: error.message || "Erro ao consultar pagamento." });
+      if (error.message === "AUTH_REQUIRED") {
+        return json(res, 401, {
+          ok: false,
+          mensagem: "Sessão inválida.",
+        });
+      }
+
+      return json(res, 500, {
+        ok: false,
+        mensagem: error.message || "Erro ao consultar pagamento.",
+      });
     }
   }
 );
 
+/* =========================================
+   WEBHOOK MERCADO PAGO
+========================================= */
 exports.mercadoPagoWebhook = onRequest(
-  { region: "southamerica-east1", secrets: [MP_ACCESS_TOKEN, MP_WEBHOOK_SECRET] },
+  {
+    region: "southamerica-east1",
+    secrets: [MP_ACCESS_TOKEN, MP_WEBHOOK_SECRET],
+  },
   async (req, res) => {
-    // O Mercado Pago exige resposta rápida 200/201 para confirmar recebimento.
     cors(req, res);
+
     if (req.method === "OPTIONS") return res.status(204).send("");
     if (req.method !== "POST") return res.status(405).send("Method Not Allowed");
 
@@ -375,10 +580,15 @@ exports.mercadoPagoWebhook = onRequest(
       }
 
       const type = String(req.query.type || req.body?.type || "");
-      const dataId = String(req.query["data.id"] || req.body?.data?.id || "");
+      const dataId = String(
+        req.query["data.id"] || req.body?.data?.id || ""
+      );
 
       if (type === "payment" && dataId) {
-        const payment = await mpFetch(`/v1/payments/${encodeURIComponent(dataId)}`, { method: "GET" });
+        const payment = await mpFetch(
+          `/v1/payments/${encodeURIComponent(dataId)}`,
+          { method: "GET" }
+        );
         await aplicarStatusPagamento(payment);
       }
 
